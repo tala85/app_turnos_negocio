@@ -61,3 +61,5 @@ export default async function ReservarPage({
     </main>
   );
 }
+// Al final del archivo, agregá un comentario
+// Fix: ensure this page is included in build
