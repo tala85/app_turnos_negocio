@@ -2,14 +2,25 @@ import { adminDb } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import ReservaForm from '@/components/ReservaForm';
 
-// ✅ DESCOMENTAR ESTA FUNCIÓN:
 export async function generateStaticParams() {
-  const { data: estudios } = await adminDb
-    .from('estudios')
-    .select('slug');
+  try {
+    const { data: estudios, error } = await adminDb
+      .from('estudios')
+      .select('slug');
 
-  return estudios?.map((e) => ({ estudio: e.slug })) ?? [];
+    if (error) {
+      console.error('Error fetching estudios:', error);
+      return [{ estudio: 'belleza-posadas' }]; // Fallback
+    }
+
+    return estudios?.map((e) => ({ estudio: e.slug })) ?? [{ estudio: 'belleza-posadas' }];
+  } catch (error) {
+    console.error('Error in generateStaticParams:', error);
+    return [{ estudio: 'belleza-posadas' }]; // Fallback seguro
+  }
 }
+
+export const dynamicParams = true; // Permitir rutas dinámicas si no están en generateStaticParams
 
 export default async function ReservarPage({
   params,
