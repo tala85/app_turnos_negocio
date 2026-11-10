@@ -1,26 +1,26 @@
-import { adminDb } from '@/lib/supabase/admin';
+import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import ReservaForm from '@/components/ReservaForm';
 
+// Cliente público para lecturas (funciona en build time y runtime)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export async function generateStaticParams() {
   try {
-    const { data: estudios, error } = await adminDb
+    const { data: estudios } = await supabase
       .from('estudios')
       .select('slug');
 
-    if (error) {
-      console.error('Error fetching estudios:', error);
-      return [{ estudio: 'belleza-posadas' }]; // Fallback
-    }
-
     return estudios?.map((e) => ({ estudio: e.slug })) ?? [{ estudio: 'belleza-posadas' }];
-  } catch (error) {
-    console.error('Error in generateStaticParams:', error);
-    return [{ estudio: 'belleza-posadas' }]; // Fallback seguro
+  } catch {
+    return [{ estudio: 'belleza-posadas' }];
   }
 }
 
-export const dynamicParams = true; // Permitir rutas dinámicas si no están en generateStaticParams
+export const dynamicParams = true;
 
 export default async function ReservarPage({
   params,
@@ -29,7 +29,7 @@ export default async function ReservarPage({
 }) {
   const { estudio: slug } = await params;
 
-  const { data: estudio } = await adminDb
+  const { data: estudio } = await supabase
     .from('estudios')
     .select('*')
     .eq('slug', slug)
@@ -40,13 +40,13 @@ export default async function ReservarPage({
   }
 
   const [{ data: servicios }, { data: combos }] = await Promise.all([
-    adminDb
+    supabase
       .from('servicios')
       .select('*')
       .eq('estudio_id', estudio.id)
       .eq('activo', true)
       .order('orden'),
-    adminDb
+    supabase
       .from('combos')
       .select('*, combo_servicios(servicio_id)')
       .eq('estudio_id', estudio.id)
