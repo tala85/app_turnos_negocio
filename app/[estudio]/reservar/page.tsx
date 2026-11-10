@@ -2,14 +2,14 @@ import { adminDb } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import ReservaForm from '@/components/ReservaForm';
 
-// ❌ BORRAR O COMENTAR ESTA FUNCIÓN:
-//export async function generateStaticParams() {
-// const { data: estudios } = await adminDb
-//    .from('estudios')
-//    .select('slug');
+// ✅ DESCOMENTAR ESTA FUNCIÓN:
+export async function generateStaticParams() {
+  const { data: estudios } = await adminDb
+    .from('estudios')
+    .select('slug');
 
-//  return estudios?.map((e) => ({ estudio: e.slug })) ?? [];
-//}
+  return estudios?.map((e) => ({ estudio: e.slug })) ?? [];
+}
 
 export default async function ReservarPage({
   params,
@@ -61,5 +61,3 @@ export default async function ReservarPage({
     </main>
   );
 }
-// Al final del archivo, agregá un comentario
-// Fix: ensure this page is included in build
