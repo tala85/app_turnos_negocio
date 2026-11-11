@@ -23,7 +23,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <footer className="bg-gray-50 py-3 mt-8">
+          <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
+            <p className="text-xs text-gray-400">
+              © {new Date().getFullYear()} Belleza Posadas
+            </p>
+            <a
+              href="/admin/login"
+              className="text-xs text-gray-300 hover:text-pink-500 transition-colors"
+            >
+              🔒 Admin
+            </a>
+          </div>
+        </footer>
+      </body>
     </html>
   );
 }
