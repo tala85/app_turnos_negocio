@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 
 type Props = {
-  fechaSeleccionada: string; // formato YYYY-MM-DD
+  fechaSeleccionada: string;
   onChange: (fecha: string) => void;
-  minFecha?: string; // fecha mínima (por defecto hoy)
-  maxFecha?: string; // fecha máxima (por defecto +30 días)
+  minFecha?: string;
+  maxFecha?: string;
+  label?: string;
 };
 
 export default function Calendario({
@@ -14,131 +15,100 @@ export default function Calendario({
   onChange,
   minFecha,
   maxFecha,
+  label = 'Seleccioná una fecha',
 }: Props) {
-  // Estado para el mes que se está viendo (no el seleccionado)
-  const [mesVista, setMesVista] = useState(() => {
+  // Generar días disponibles (próximos 14 días)
+  const diasDisponibles = useMemo(() => {
+    const dias: { fechaStr: string; diaSemana: string; diaNum: number; mes: string }[] = [];
     const hoy = new Date();
-    return { año: hoy.getFullYear(), mes: hoy.getMonth() };
-  });
+    hoy.setHours(0, 0, 0, 0);
+    
+    // Calcular min y max DENTRO del useMemo para evitar warnings de dependencias
+    const min = minFecha ? new Date(minFecha) : hoy;
+    const maxDefault = new Date(hoy);
+    maxDefault.setDate(maxDefault.getDate() + 60);
+    const max = maxFecha ? new Date(maxFecha) : maxDefault;
 
-  // Nombres de meses y días en español
-  const meses = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-  ];
-  const diasSemana = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
+    // Próximos 14 días
+    for (let i = 0; i < 14; i++) {
+      const fecha = new Date(hoy);
+      fecha.setDate(fecha.getDate() + i);
+      
+      if (fecha >= min && fecha <= max) {
+        const fechaStr = fecha.toISOString().split('T')[0];
+        const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short' });
+        const diaNum = fecha.getDate();
+        const mes = fecha.toLocaleDateString('es-AR', { month: 'short' });
+        
+        dias.push({
+          fechaStr,
+          diaSemana: diaSemana.replace('.', ''),
+          diaNum,
+          mes: mes.replace('.', ''),
+        });
+      }
+    }
+    
+    return dias;
+  }, [minFecha, maxFecha]);
 
-  // Calcular días del mes
-  const primerDia = new Date(mesVista.año, mesVista.mes, 1);
-  const ultimoDia = new Date(mesVista.año, mesVista.mes + 1, 0);
-  const diasEnMes = ultimoDia.getDate();
-  const diaInicio = primerDia.getDay(); // 0=domingo
-
-  // Fecha mínima por defecto: hoy
-  const hoy = new Date().toISOString().split('T')[0];
-  const min = minFecha || hoy;
-
-  // Fecha máxima por defecto: 30 días desde hoy
-  const maxDefault = new Date();
-  maxDefault.setDate(maxDefault.getDate() + 30);
-  const max = maxFecha || maxDefault.toISOString().split('T')[0];
-
-  // Navegar al mes anterior
-  const mesAnterior = () => {
-    setMesVista((prev) => {
-      if (prev.mes === 0) return { año: prev.año - 1, mes: 11 };
-      return { ...prev, mes: prev.mes - 1 };
-    });
+  const seleccionarFecha = (fechaStr: string) => {
+    onChange(fechaStr);
   };
-
-  // Navegar al mes siguiente
-  const mesSiguiente = () => {
-    setMesVista((prev) => {
-      if (prev.mes === 11) return { año: prev.año + 1, mes: 0 };
-      return { ...prev, mes: prev.mes + 1 };
-    });
-  };
-
-  // ¿Se puede seleccionar esta fecha?
-  const esSeleccionable = (fecha: string) => {
-    return fecha >= min && fecha <= max;
-  };
-
-  // Generar los días del calendario (incluyendo espacios vacíos al inicio)
-  const dias: (number | null)[] = [];
-  for (let i = 0; i < diaInicio; i++) dias.push(null);
-  for (let d = 1; d <= diasEnMes; d++) dias.push(d);
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm">
-      {/* Header con navegación */}
-      <div className="flex items-center justify-between mb-4">
-        <button
-          type="button"
-          onClick={mesAnterior}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
-          aria-label="Mes anterior"
-        >
-          ←
-        </button>
-        <h3 className="font-semibold text-gray-800">
-          {meses[mesVista.mes]} {mesVista.año}
-        </h3>
-        <button
-          type="button"
-          onClick={mesSiguiente}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
-          aria-label="Mes siguiente"
-        >
-          →
-        </button>
+    <div className="w-full">
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        {label}
+      </label>
+      
+      {/* Scroll horizontal de días */}
+      <div className="relative">
+        <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+          {diasDisponibles.map(({ fechaStr, diaSemana, diaNum, mes }) => {
+            const estaSeleccionada = fechaStr === fechaSeleccionada;
+            const esHoy = fechaStr === new Date().toISOString().split('T')[0];
+            
+            return (
+              <button
+                key={fechaStr}
+                type="button"
+                onClick={() => seleccionarFecha(fechaStr)}
+                className={`
+                  snap-start shrink-0 w-20 h-24 rounded-2xl border-2 flex flex-col items-center justify-center gap-1
+                  transition-all duration-200 active:scale-95
+                  ${estaSeleccionada
+                    ? 'bg-gradient-to-br from-pink-500 to-fuchsia-600 border-pink-500 text-white shadow-lg shadow-pink-500/30'
+                    : 'bg-white border-gray-200 text-gray-700 hover:border-pink-300 hover:bg-pink-50'
+                  }
+                `}
+              >
+                <span className="text-xs font-medium uppercase">
+                  {diaSemana}
+                </span>
+                <span className="text-2xl font-bold tabular-nums">
+                  {diaNum}
+                </span>
+                <span className="text-xs capitalize">
+                  {mes}
+                </span>
+                {esHoy && !estaSeleccionada && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Gradientes laterales para indicar scroll */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent dark:from-gray-900" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent dark:from-gray-900" />
       </div>
-
-      {/* Días de la semana */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {diasSemana.map((d) => (
-          <div
-            key={d}
-            className="text-center text-xs font-medium text-gray-500 py-1"
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* Días del mes */}
-      <div className="grid grid-cols-7 gap-1">
-        {dias.map((dia, idx) => {
-          if (dia === null) {
-            return <div key={`empty-${idx}`} />;
-          }
-
-          // Construir fecha en formato YYYY-MM-DD
-          const mesStr = String(mesVista.mes + 1).padStart(2, '0');
-          const diaStr = String(dia).padStart(2, '0');
-          const fechaStr = `${mesVista.año}-${mesStr}-${diaStr}`;
-
-          const esHoy = fechaStr === hoy;
-          const estaSeleccionada = fechaStr === fechaSeleccionada;
-          const sePuede = esSeleccionable(fechaStr);
-
-          return (
-            <button
-              key={dia}
-              type="button"
-              disabled={!sePuede}
-              onClick={() => onChange(fechaStr)}
-              className={`aspect-square rounded-lg text-sm font-medium transition-all
-                ${!sePuede ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-pink-100'}
-                ${esHoy ? 'ring-2 ring-pink-300' : ''}
-                ${estaSeleccionada ? 'bg-pink-500 text-white hover:bg-pink-600' : 'text-gray-700'}
-              `}
-            >
-              {dia}
-            </button>
-          );
-        })}
-      </div>
+      
+      {/* Info */}
+      <p className="mt-2 text-xs text-gray-500">
+        {diasDisponibles.length} días disponibles · Deslizá para ver más
+      </p>
     </div>
   );
 }
