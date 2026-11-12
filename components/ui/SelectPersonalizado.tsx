@@ -34,7 +34,6 @@ export default function SelectPersonalizado({
 
   const opcionSeleccionada = opciones.find((o) => o.valor === valor);
 
-  // Cerrar al hacer click fuera
   useEffect(() => {
     const handleClickFuera = (e: MouseEvent) => {
       if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
@@ -47,16 +46,14 @@ export default function SelectPersonalizado({
 
   return (
     <div ref={contenedorRef} className="relative">
-      {/* Botón principal */}
       <button
         type="button"
         onClick={() => setAbierto(!abierto)}
-        className={`h-12 w-full rounded-xl border px-4 text-left text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input} ${tema.texto}`}
+        className={`h-10 w-full rounded-lg border px-3 text-left text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 ${tema.input} ${tema.texto}`}
       >
         {opcionSeleccionada ? opcionSeleccionada.etiqueta : placeholder}
       </button>
 
-      {/* Dropdown */}
       {abierto && (
         <div className={`absolute z-50 mt-1 w-full rounded-xl border shadow-lg ${tema.tarjeta} ${tema.borde}`}>
           {opciones.map((opcion) => (
@@ -67,8 +64,8 @@ export default function SelectPersonalizado({
                 onChange(opcion.valor);
                 setAbierto(false);
               }}
-              className={`w-full px-4 py-3 text-left text-sm transition-colors hover:bg-pink-500/10 ${
-                opcion.valor === valor ? "bg-pink-500/20 font-semibold" : ""
+              className={`w-full px-3 py-2.5 text-left text-sm transition-colors hover:bg-pink-500/10 ${
+                opcion.valor === valor ? "bg-pink-500/15 font-medium" : ""
               } ${tema.texto}`}
             >
               {opcion.etiqueta}
