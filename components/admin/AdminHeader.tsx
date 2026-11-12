@@ -26,27 +26,46 @@ type Props = {
   links: NavLink[];
 };
 
-export default function AdminHeader({ tema, icono, titulo, subtitulo, links }: Props) {
+export default function AdminHeader({
+  tema,
+  icono,
+  titulo,
+  subtitulo,
+  links,
+}: Props) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: ADMIN_CSS }} />
 
-      <header className={`${tema.tarjeta} mb-4 rounded-2xl border ${tema.borde} p-4 shadow-sm sm:mb-6 sm:p-5`}>
+      <header
+        className={`${tema.tarjeta} mb-4 rounded-2xl border ${tema.borde} p-4 shadow-sm sm:mb-6 sm:p-5`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-pink-500 to-fuchsia-600 text-xl shadow-lg shadow-pink-500/25">
               {icono}
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold sm:text-2xl">{titulo}</h1>
-              <p className={`truncate text-xs sm:text-sm ${tema.texto2}`}>{subtitulo}</p>
+              {/* ✅ CAMBIO 1: font-semibold + tracking-tight para elegancia */}
+              <h1 className="truncate text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                {titulo}
+              </h1>
+
+              {/* ✅ CAMBIO 2: Subí un poco el tamaño del subtítulo (text-sm) para mejor lectura */}
+              <p
+                className={`truncate text-sm sm:text-base ${tema.texto2} mt-0.5`}
+              >
+                {subtitulo}
+              </p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={tema.alternar}
-            aria-label={tema.oscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            aria-label={
+              tema.oscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
+            }
             className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg transition-all ${
               tema.oscuro
                 ? "bg-amber-400 text-gray-900 hover:bg-amber-300"
