@@ -29,6 +29,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    // 🕵️‍♂️ CÁMARA 2: ¿Qué recibió realmente el servidor?
+    console.log("📬 DATOS RECIBIDOS POR EL SERVIDOR:", body);
+
     const { estudioId, nombre, descripcion, precio_oferta, servicio_ids, activo = true } = body;
 
     if (!estudioId || !nombre || !precio_oferta || !servicio_ids || servicio_ids.length === 0) {

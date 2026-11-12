@@ -12,7 +12,7 @@ import type { Servicio } from "@/features/servicios/types";
 
 type Combo = {
   id: string;
-  estudio_id: string;
+  estudio_id?: string;
   nombre: string;
   descripcion: string | null;
   precio_oferta: number;
@@ -53,7 +53,6 @@ export default function AdminCombosPage() {
   const [aEliminar, setAEliminar] = useState<Combo | null>(null);
   const [eliminando, setEliminando] = useState(false);
 
-  // Cargar datos
   useEffect(() => {
     let activo = true;
     Promise.all([combosApi.listar(), serviciosApi.listar()])
@@ -165,6 +164,8 @@ export default function AdminCombosPage() {
     precioNum >= 0 &&
     formDatos.servicio_ids.length > 0;
 
+  // ✅ No renderizar nada hasta que esté montado en el cliente
+
   return (
     <div
       className={`min-h-screen ${tema.bg} ${tema.texto} transition-colors duration-300`}
@@ -172,7 +173,7 @@ export default function AdminCombosPage() {
       <div className="mx-auto max-w-5xl px-3 pb-28 pt-4 sm:px-6 sm:pb-10 sm:pt-8">
         <AdminHeader
           tema={tema}
-          icono="🎁"
+          icono=""
           titulo="Gestión de Combos"
           subtitulo="Creá y gestioná combos y ofertas"
           links={[
@@ -182,7 +183,6 @@ export default function AdminCombosPage() {
               icono: "📋",
               color: "emerald",
             },
-            
             {
               href: "/admin/servicios",
               label: "Servicios",
@@ -197,6 +197,7 @@ export default function AdminCombosPage() {
             },
           ]}
         />
+        {/* ... resto del código igual ... */}
 
         {/* Formulario */}
         <section
@@ -221,7 +222,7 @@ export default function AdminCombosPage() {
                     setFormDatos({ ...formDatos, nombre: e.target.value })
                   }
                   placeholder="Ej: Pack Manicura + Pedicura"
-                  className={`h-12 w-full rounded-xl border px-4 text-sm text-gray-900 dark:text-gray-100 outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
+                  className={`h-12 w-full rounded-xl border px-4 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
                   required
                 />
               </div>
@@ -239,7 +240,7 @@ export default function AdminCombosPage() {
                   }
                   placeholder="Ej: Incluye manicura semipermanente y pedicura tradicional"
                   rows={3}
-                  className={`w-full rounded-xl border px-4 py-3 text-gray-900 dark:text-gray-100 transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
                 />
               </div>
 
@@ -268,7 +269,7 @@ export default function AdminCombosPage() {
                       })
                     }
                     placeholder="0"
-                    className={`${tema.input} h-12 w-full rounded-xl border pl-8 pr-4 text-gray-900 dark:text-gray-100 transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25`}
+                    className={`h-12 w-full rounded-xl border pl-8 pr-4 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
                     required
                   />
                 </div>
@@ -295,12 +296,12 @@ export default function AdminCombosPage() {
                         }}
                         className={`w-full p-3 rounded-lg border text-left transition-all ${
                           seleccionado
-                            ? "border-pink-500 bg-pink-500/10 text-pink-600"
-                            : `${tema.borde} ${tema.suave} ${tema.texto2}`
+                            ? "border-pink-500 bg-pink-500/10 text-pink-600 font-semibold"
+                            : `${tema.borde} ${tema.suave} text-gray-700 dark:text-gray-300 font-medium`
                         }`}
                       >
                         <div className="flex justify-between items-center">
-                          <span className="font-medium">{s.nombre}</span>
+                          <span>{s.nombre}</span>
                           {seleccionado && <span className="text-lg">✓</span>}
                         </div>
                       </button>
@@ -308,7 +309,7 @@ export default function AdminCombosPage() {
                   })}
                 </div>
                 {formDatos.servicio_ids.length === 0 && (
-                  <p className="mt-2 text-xs text-amber-600">
+                  <p className="mt-2 text-xs text-amber-600 font-medium">
                     Seleccioná al menos un servicio
                   </p>
                 )}

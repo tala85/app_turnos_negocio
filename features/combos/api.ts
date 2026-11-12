@@ -12,7 +12,7 @@ type ComboPayload = {
 
 type Combo = {
   id: string;
-  estudio_id: string;
+  estudioId: string;
   nombre: string;
   descripcion: string | null;
   precio_oferta: number;
@@ -37,7 +37,7 @@ export const combosApi = {
     const res = await fetch(API, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: JSON.stringify({ estudio_id: ESTUDIO_ID, ...payload, activo: true }),
+      body: JSON.stringify({ estudioId: ESTUDIO_ID, ...payload, activo: true }),
     });
     await leer(res);
   },

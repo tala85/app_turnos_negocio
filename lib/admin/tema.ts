@@ -34,8 +34,8 @@ export function useTema(): Tema {
     divisor: o ? "divide-gray-700" : "divide-gray-100",
     filaHover: o ? "hover:bg-gray-700/40" : "hover:bg-gray-50",
     input: o
-      ? "bg-gray-900/60 border-gray-600 text-gray-100 placeholder-gray-500"
-      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400",
+      ? "!bg-gray-800 !border-gray-600 !text-gray-100 placeholder:!text-gray-400"
+      : "!bg-white !border-gray-300 !text-gray-900 placeholder:!text-gray-400",
     btnPrimario:
       "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-lg shadow-pink-500/25 hover:brightness-110 active:scale-[.99]",
     btnNeutro: o
