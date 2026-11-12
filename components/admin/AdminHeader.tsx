@@ -7,7 +7,7 @@ export type NavLink = {
   href: string;
   label: string;
   icono: string;
-  color: "emerald" | "fuchsia" | "blue" | "pink";
+  color: "emerald" | "fuchsia" | "blue" | "pink" | "purple";
 };
 
 const COLORES: Record<NavLink["color"], string> = {
@@ -15,6 +15,7 @@ const COLORES: Record<NavLink["color"], string> = {
   fuchsia: "border-fuchsia-500 text-fuchsia-600 hover:bg-fuchsia-500/10",
   blue: "border-blue-500 text-blue-600 hover:bg-blue-500/10",
   pink: "border-pink-500 text-pink-600 hover:bg-pink-500/10",
+  purple: "border-purple-500 text-purple-600 hover:bg-purple-500/10",
 };
 
 type Props = {

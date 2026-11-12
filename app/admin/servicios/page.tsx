@@ -15,7 +15,9 @@ export default function AdminServiciosPage() {
   const s = useServicios();
 
   return (
-    <div className={`min-h-screen ${tema.bg} ${tema.texto} transition-colors duration-300`}>
+    <div
+      className={`min-h-screen ${tema.bg} ${tema.texto} transition-colors duration-300`}
+    >
       <div className="mx-auto max-w-5xl px-3 pb-28 pt-4 sm:px-6 sm:pb-10 sm:pt-8">
         <AdminHeader
           tema={tema}
@@ -23,8 +25,30 @@ export default function AdminServiciosPage() {
           titulo="Gestión de Servicios"
           subtitulo="Agregá, editá o eliminá los servicios"
           links={[
-            { href: "/admin/reservas", label: "Reservas", icono: "📋", color: "emerald" },
-            { href: "/admin/configuracion", label: "Personalización", icono: "🎨", color: "fuchsia" },
+            {
+              href: "/admin/reservas",
+              label: "Reservas",
+              icono: "📋",
+              color: "emerald",
+            },
+            {
+              href: "/admin/horarios",
+              label: "Horarios",
+              icono: "🕒",
+              color: "blue",
+            },
+            {
+              href: "/admin/combos",
+              label: "Combos",
+              icono: "🎁",
+              color: "purple",
+            },
+            {
+              href: "/admin/configuracion",
+              label: "Personalización",
+              icono: "🎨",
+              color: "fuchsia",
+            },
           ]}
         />
 
@@ -94,9 +118,13 @@ export default function AdminServiciosPage() {
       >
         {s.aEliminar && (
           <>
-            Vas a eliminar <strong className={tema.texto}>&ldquo;{s.aEliminar.nombre}&rdquo;</strong> (
-            {duracionTexto(s.aEliminar.duracion_min)} · {money(s.aEliminar.precio)}). Dejará de aparecer en la
-            página de reservas.
+            Vas a eliminar{" "}
+            <strong className={tema.texto}>
+              &ldquo;{s.aEliminar.nombre}&rdquo;
+            </strong>{" "}
+            ({duracionTexto(s.aEliminar.duracion_min)} ·{" "}
+            {money(s.aEliminar.precio)}). Dejará de aparecer en la página de
+            reservas.
           </>
         )}
       </ConfirmDialog>

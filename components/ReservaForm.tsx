@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // ✅ Agregado useEffect
 import type { Servicio, Combo, ItemReserva, ClienteInput } from "@/lib/types";
 import ListaServicios from "./servicios/ListaServicios";
 import Calendario from "./turnos/Calendario";
@@ -28,8 +28,15 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
   const [serviciosElegidos, setServiciosElegidos] = useState<string[]>([]);
   const [combosElegidos, setCombosElegidos] = useState<string[]>([]);
   const [fecha, setFecha] = useState("");
-  const [horariosDisponibles, setHorariosDisponibles] = useState<HorarioDisponible[]>([]);
+  
+  // ✅ Estado para los slots de horarios del día seleccionado
+  const [horariosSlots, setHorariosSlots] = useState<HorarioDisponible[]>([]);
   const [horarioSeleccionado, setHorarioSeleccionado] = useState<HorarioDisponible | null>(null);
+  
+  // ✅ Estados para la configuración del admin (nombres distintos para no chocar)
+  const [horariosAdmin, setHorariosAdmin] = useState<{ dia_semana: number; hora_inicio: string; hora_fin: string }[]>([]);
+  const [excepcionesAdmin, setExcepcionesAdmin] = useState<{ fecha: string; hora_inicio: string; hora_fin: string }[]>([]);
+  
   const [cliente, setCliente] = useState<ClienteInput>({ dni: "", nombre: "", apellido: "", telefono: "" });
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,16 +83,34 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
     setHorarioSeleccionado(null);
   };
 
-  const cargarHorarios = async (nuevaFecha: string) => {
+  // ✅ Cargar configuración de horarios del admin
+  useEffect(() => {
+    const cargarConfiguracionHorarios = async () => {
+      try {
+        const res = await fetch(`/api/admin/horarios?estudioId=${estudioId}`);
+        const data = await res.json();
+        if (data.ok) {
+          setHorariosAdmin(data.data.horarios || []);
+          setExcepcionesAdmin(data.data.excepciones || []);
+        }
+      } catch (error) {
+        console.error("Error cargando horarios:", error);
+      }
+    };
+    cargarConfiguracionHorarios();
+  }, [estudioId]);
+
+  // ✅ Cargar slots disponibles para la fecha seleccionada
+  const cargarHorariosDelDia = async (nuevaFecha: string) => {
     setFecha(nuevaFecha);
-    setHorariosDisponibles([]);
+    setHorariosSlots([]);
     setHorarioSeleccionado(null);
     if (minutos === 0) return;
 
     try {
       const res = await fetch(`/api/turnos/horarios-inicio?estudioId=${estudioId}&fecha=${nuevaFecha}&duracionMin=${minutos}`);
       const data = await res.json();
-      if (data.ok) setHorariosDisponibles(data.horarios);
+      if (data.ok) setHorariosSlots(data.horarios || []);
     } catch (e) {
       console.error("Error cargando horarios:", e);
     }
@@ -95,9 +120,9 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
 
   const formatearHora = (iso: string) => {
     try {
-      const fecha = new Date(iso);
-      if (isNaN(fecha.getTime())) return "Hora no disponible";
-      return fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" });
+      const fechaObj = new Date(iso);
+      if (isNaN(fechaObj.getTime())) return "Hora no disponible";
+      return fechaObj.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" });
     } catch {
       return "Hora no disponible";
     }
@@ -144,7 +169,7 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
             sena: data.sena,
             fecha: new Date(horarioSeleccionado.inicio).toLocaleDateString("es-AR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
             hora: formatearHora(horarioSeleccionado.inicio),
-            telefonoEstudio: "3764813696", // Tu número de prueba
+            telefonoEstudio: "3764813696",
           };
 
           sessionStorage.setItem("reservaExitosa", JSON.stringify(datosParaWhatsApp));
@@ -170,7 +195,6 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
           setError(e instanceof Error ? e.message : "Error al procesar pago");
         }
       } else {
-        // Si no requiere seña, mostrar éxito directamente
         setReservaExitosa({ reservaId: data.reservaId, total: data.total, sena: data.sena });
       }
     } catch (e: unknown) {
@@ -188,13 +212,9 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
         <p className="text-gray-600 mb-4">Tu turno fue bloqueado por 10 minutos.</p>
         <div className="rounded-lg p-4 mb-4" style={{ backgroundColor: `${colores.primario}15` }}>
           <p className="text-sm text-gray-600">Total:</p>
-          <p className="text-2xl font-bold" style={{ color: colores.primario }}>
-            ${reservaExitosa.total.toLocaleString("es-AR")}
-          </p>
+          <p className="text-2xl font-bold" style={{ color: colores.primario }}>${reservaExitosa.total.toLocaleString("es-AR")}</p>
           <p className="text-sm text-gray-600 mt-2">Seña a pagar:</p>
-          <p className="text-xl font-bold" style={{ color: colores.primario }}>
-            ${reservaExitosa.sena.toLocaleString("es-AR")}
-          </p>
+          <p className="text-xl font-bold" style={{ color: colores.primario }}>${reservaExitosa.sena.toLocaleString("es-AR")}</p>
         </div>
         <p className="text-xs text-gray-500">ID de reserva: {reservaExitosa.reservaId}</p>
       </div>
@@ -203,7 +223,6 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
 
   return (
     <div className="grid md:grid-cols-3 gap-6">
-      {/* Columna izquierda: Pasos 1, 2, 3 */}
       <div className="md:col-span-2 space-y-6">
         <section className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-2xl font-semibold mb-4 text-gray-800">1. Elegí tus servicios</h2>
@@ -219,16 +238,22 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
         <section className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-2xl font-semibold mb-4 text-gray-800">2. Elegí el día y horario</h2>
           <div className="space-y-4">
-            <Calendario fechaSeleccionada={fecha} onChange={cargarHorarios} />
+            {/* ✅ Pasamos los estados de configuración al calendario */}
+            <Calendario
+              fechaSeleccionada={fecha}
+              onChange={cargarHorariosDelDia}
+              horariosDisponibles={horariosAdmin}
+              excepciones={excepcionesAdmin}
+            />
 
             {minutos > 0 && fecha && (
               <div className="rounded-lg p-4 border" style={{ backgroundColor: `${colores.secundario}10`, borderColor: `${colores.secundario}30` }}>
-                <p className="text-sm font-medium mb-2" style={{ color: colores.secundario }}>
-                  ⏱️ Duración total: {minutos} minutos
-                </p>
-                {horariosDisponibles.length > 0 ? (
+                <p className="text-sm font-medium mb-2" style={{ color: colores.secundario }}>⏱️ Duración total: {minutos} minutos</p>
+                
+                {/* ✅ Usamos horariosSlots en lugar de horariosDisponibles aquí */}
+                {horariosSlots.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {horariosDisponibles.map((horario, idx) => {
+                    {horariosSlots.map((horario, idx) => {
                       const estaSeleccionado = horarioSeleccionado?.inicio === horario.inicio;
                       return (
                         <button
@@ -262,7 +287,6 @@ export default function ReservaForm({ estudioId, servicios, combos, colores }: P
         </section>
       </div>
 
-      {/* Columna derecha: Resumen (Sticky en desktop) */}
       <div className="md:col-span-1">
         <div className="md:sticky md:top-6">
           <ResumenReserva

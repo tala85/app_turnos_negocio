@@ -34,7 +34,8 @@ const FORM_VACIO: FormDatos = {
   servicio_ids: [],
 };
 
-const mensaje = (e: unknown) => (e instanceof Error ? e.message : "Error de conexión");
+const mensaje = (e: unknown) =>
+  e instanceof Error ? e.message : "Error de conexión";
 
 export default function AdminCombosPage() {
   const tema = useTema();
@@ -108,7 +109,9 @@ export default function AdminCombosPage() {
       await recargar();
       mostrar({
         tipo: "ok",
-        texto: editando ? `"${payload.nombre}" actualizado` : `"${payload.nombre}" creado`,
+        texto: editando
+          ? `"${payload.nombre}" actualizado`
+          : `"${payload.nombre}" creado`,
       });
     } catch (err: unknown) {
       mostrar({ tipo: "error", texto: mensaje(err) });
@@ -119,13 +122,24 @@ export default function AdminCombosPage() {
 
   const toggleActivo = async (combo: Combo) => {
     const nuevoEstado = !combo.activo;
-    setCombos((prev) => prev.map((c) => (c.id === combo.id ? { ...c, activo: nuevoEstado } : c)));
+    setCombos((prev) =>
+      prev.map((c) => (c.id === combo.id ? { ...c, activo: nuevoEstado } : c)),
+    );
 
     try {
       await combosApi.actualizar(combo.id, { activo: nuevoEstado });
-      mostrar({ tipo: "ok", texto: nuevoEstado ? `"${combo.nombre}" activado` : `"${combo.nombre}" desactivado` });
+      mostrar({
+        tipo: "ok",
+        texto: nuevoEstado
+          ? `"${combo.nombre}" activado`
+          : `"${combo.nombre}" desactivado`,
+      });
     } catch (err: unknown) {
-      setCombos((prev) => prev.map((c) => (c.id === combo.id ? { ...c, activo: combo.activo } : c)));
+      setCombos((prev) =>
+        prev.map((c) =>
+          c.id === combo.id ? { ...c, activo: combo.activo } : c,
+        ),
+      );
       mostrar({ tipo: "error", texto: mensaje(err) });
     }
   };
@@ -152,7 +166,9 @@ export default function AdminCombosPage() {
     formDatos.servicio_ids.length > 0;
 
   return (
-    <div className={`min-h-screen ${tema.bg} ${tema.texto} transition-colors duration-300`}>
+    <div
+      className={`min-h-screen ${tema.bg} ${tema.texto} transition-colors duration-300`}
+    >
       <div className="mx-auto max-w-5xl px-3 pb-28 pt-4 sm:px-6 sm:pb-10 sm:pt-8">
         <AdminHeader
           tema={tema}
@@ -160,14 +176,32 @@ export default function AdminCombosPage() {
           titulo="Gestión de Combos"
           subtitulo="Creá y gestioná combos y ofertas"
           links={[
-            { href: "/admin/reservas", label: "Reservas", icono: "📋", color: "emerald" },
-            { href: "/admin/servicios", label: "Servicios", icono: "💅", color: "blue" },
-            { href: "/admin/configuracion", label: "Personalización", icono: "🎨", color: "fuchsia" },
+            {
+              href: "/admin/reservas",
+              label: "Reservas",
+              icono: "📋",
+              color: "emerald",
+            },
+            
+            {
+              href: "/admin/servicios",
+              label: "Servicios",
+              icono: "💅",
+              color: "blue",
+            },
+            {
+              href: "/admin/configuracion",
+              label: "Personalización",
+              icono: "🎨",
+              color: "fuchsia",
+            },
           ]}
         />
 
         {/* Formulario */}
-        <section className={`${tema.tarjeta} mb-4 rounded-2xl border ${tema.borde} shadow-sm`}>
+        <section
+          className={`${tema.tarjeta} mb-4 rounded-2xl border ${tema.borde} shadow-sm`}
+        >
           <div className="p-4 sm:p-5">
             <h2 className="text-lg font-bold mb-4">
               {editando ? "✏️ Editar combo" : "➕ Nuevo combo"}
@@ -175,38 +209,50 @@ export default function AdminCombosPage() {
 
             <form onSubmit={guardar} className="space-y-4">
               <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-1`}>
+                <label
+                  className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-1`}
+                >
                   Nombre del combo
                 </label>
                 <input
                   type="text"
                   value={formDatos.nombre}
-                  onChange={(e) => setFormDatos({ ...formDatos, nombre: e.target.value })}
+                  onChange={(e) =>
+                    setFormDatos({ ...formDatos, nombre: e.target.value })
+                  }
                   placeholder="Ej: Pack Manicura + Pedicura"
-                  className={`h-12 w-full rounded-xl border px-4 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
+                  className={`h-12 w-full rounded-xl border px-4 text-sm text-gray-900 dark:text-gray-100 outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
                   required
                 />
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-1`}>
+                <label
+                  className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-1`}
+                >
                   Descripción
                 </label>
                 <textarea
                   value={formDatos.descripcion}
-                  onChange={(e) => setFormDatos({ ...formDatos, descripcion: e.target.value })}
+                  onChange={(e) =>
+                    setFormDatos({ ...formDatos, descripcion: e.target.value })
+                  }
                   placeholder="Ej: Incluye manicura semipermanente y pedicura tradicional"
                   rows={3}
-                  className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
+                  className={`w-full rounded-xl border px-4 py-3 text-gray-900 dark:text-gray-100 transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 ${tema.input}`}
                 />
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-1`}>
+                <label
+                  className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-1`}
+                >
                   Precio de oferta
                 </label>
                 <div className="relative">
-                  <span className={`pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold ${tema.texto2}`}>
+                  <span
+                    className={`pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold ${tema.texto2}`}
+                  >
                     $
                   </span>
                   <input
@@ -215,16 +261,23 @@ export default function AdminCombosPage() {
                     min={0}
                     step={1}
                     value={formDatos.precio_oferta}
-                    onChange={(e) => setFormDatos({ ...formDatos, precio_oferta: e.target.value })}
+                    onChange={(e) =>
+                      setFormDatos({
+                        ...formDatos,
+                        precio_oferta: e.target.value,
+                      })
+                    }
                     placeholder="0"
-                    className={`${tema.input} h-12 w-full rounded-xl border pl-8 pr-4 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25`}
+                    className={`${tema.input} h-12 w-full rounded-xl border pl-8 pr-4 text-gray-900 dark:text-gray-100 transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25`}
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-2`}>
+                <label
+                  className={`block text-xs font-semibold uppercase tracking-wide ${tema.texto2} mb-2`}
+                >
                   Servicios incluidos
                 </label>
                 <div className="space-y-2 max-h-60 overflow-y-auto rounded-xl border border-gray-200 p-2">
@@ -255,7 +308,9 @@ export default function AdminCombosPage() {
                   })}
                 </div>
                 {formDatos.servicio_ids.length === 0 && (
-                  <p className="mt-2 text-xs text-amber-600">Seleccioná al menos un servicio</p>
+                  <p className="mt-2 text-xs text-amber-600">
+                    Seleccioná al menos un servicio
+                  </p>
                 )}
               </div>
 
@@ -265,7 +320,11 @@ export default function AdminCombosPage() {
                   disabled={!formValido || guardando}
                   className={`flex-1 h-12 rounded-xl text-sm font-bold transition-all disabled:opacity-45 ${tema.btnPrimario}`}
                 >
-                  {guardando ? "Guardando..." : editando ? "💾 Actualizar" : "💾 Guardar combo"}
+                  {guardando
+                    ? "Guardando..."
+                    : editando
+                      ? "💾 Actualizar"
+                      : "💾 Guardar combo"}
                 </button>
                 {editando && (
                   <button
@@ -287,9 +346,13 @@ export default function AdminCombosPage() {
         {/* Lista de combos */}
         <div className="space-y-3">
           {cargando ? (
-            <p className={`text-center py-8 ${tema.texto2}`}>Cargando combos...</p>
+            <p className={`text-center py-8 ${tema.texto2}`}>
+              Cargando combos...
+            </p>
           ) : error ? (
-            <div className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-8 text-center`}>
+            <div
+              className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-8 text-center`}
+            >
               <p className="text-3xl mb-2">⚠️</p>
               <p className="font-semibold">{error}</p>
               <button
@@ -301,26 +364,46 @@ export default function AdminCombosPage() {
               </button>
             </div>
           ) : combos.length === 0 ? (
-            <div className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-10 text-center`}>
+            <div
+              className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-10 text-center`}
+            >
               <p className="text-3xl mb-2">🎁</p>
-              <p className={`font-semibold ${tema.texto}`}>No hay combos creados</p>
-              <p className={`text-sm ${tema.texto2}`}>Creá tu primer combo para ofrecer descuentos</p>
+              <p className={`font-semibold ${tema.texto}`}>
+                No hay combos creados
+              </p>
+              <p className={`text-sm ${tema.texto2}`}>
+                Creá tu primer combo para ofrecer descuentos
+              </p>
             </div>
           ) : (
             combos.map((combo) => (
-              <div key={combo.id} className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-4 shadow-sm`}>
+              <div
+                key={combo.id}
+                className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-4 shadow-sm`}
+              >
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className={`font-bold text-lg ${tema.texto}`}>{combo.nombre}</h3>
-                    {combo.descripcion && <p className={`text-sm ${tema.texto2} mt-1`}>{combo.descripcion}</p>}
+                    <h3 className={`font-bold text-lg ${tema.texto}`}>
+                      {combo.nombre}
+                    </h3>
+                    {combo.descripcion && (
+                      <p className={`text-sm ${tema.texto2} mt-1`}>
+                        {combo.descripcion}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">
-                      {combo.combo_servicios.length} servicio{combo.combo_servicios.length !== 1 ? "s" : ""} incluido
+                      {combo.combo_servicios.length} servicio
+                      {combo.combo_servicios.length !== 1 ? "s" : ""} incluido
                       {combo.combo_servicios.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-pink-600">{money(combo.precio_oferta)}</p>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${tema.badge(combo.activo)}`}>
+                    <p className="text-2xl font-bold text-pink-600">
+                      {money(combo.precio_oferta)}
+                    </p>
+                    <span
+                      className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${tema.badge(combo.activo)}`}
+                    >
                       {combo.activo ? "Activo" : "Inactivo"}
                     </span>
                   </div>
@@ -334,7 +417,9 @@ export default function AdminCombosPage() {
                         nombre: combo.nombre,
                         descripcion: combo.descripcion ?? "",
                         precio_oferta: String(combo.precio_oferta),
-                        servicio_ids: combo.combo_servicios.map((s) => s.servicio_id),
+                        servicio_ids: combo.combo_servicios.map(
+                          (s) => s.servicio_id,
+                        ),
                       });
                     }}
                     className="flex-1 bg-blue-500/15 text-blue-600 py-2 rounded-xl text-sm font-semibold hover:bg-blue-500/25"
@@ -344,7 +429,9 @@ export default function AdminCombosPage() {
                   <button
                     onClick={() => toggleActivo(combo)}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold ${
-                      combo.activo ? "bg-amber-500/15 text-amber-600" : "bg-emerald-500/15 text-emerald-600"
+                      combo.activo
+                        ? "bg-amber-500/15 text-amber-600"
+                        : "bg-emerald-500/15 text-emerald-600"
                     }`}
                   >
                     {combo.activo ? "Desactivar" : "Activar"}
@@ -372,8 +459,11 @@ export default function AdminCombosPage() {
       >
         {aEliminar && (
           <>
-            Vas a eliminar <strong className={tema.texto}>&ldquo;{aEliminar.nombre}&rdquo;</strong>. Esta acción no se
-            puede deshacer.
+            Vas a eliminar{" "}
+            <strong className={tema.texto}>
+              &ldquo;{aEliminar.nombre}&rdquo;
+            </strong>
+            . Esta acción no se puede deshacer.
           </>
         )}
       </ConfirmDialog>
