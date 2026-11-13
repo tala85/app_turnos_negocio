@@ -52,7 +52,6 @@ export default function InputFecha({
         required={required}
         placeholder={placeholder}
         className={`h-10 w-full rounded-lg border px-3 pr-11 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 ${inputClass}`}
-        style={{ colorScheme: "dark" }}
       />
       {/* Botón calendario superpuesto */}
       <button
