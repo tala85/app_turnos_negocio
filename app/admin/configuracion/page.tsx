@@ -179,6 +179,12 @@ export default function AdminConfiguracionPage() {
               icono: "🎁",
               color: "purple",
             },
+            {
+              href: "/admin/compartir",
+              label: "Compartir",
+              icono: "📢",
+              color: "emerald",
+            },
           ]}
         />
 

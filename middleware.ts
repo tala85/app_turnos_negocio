@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verificarToken } from '@/lib/auth-token';
 
-// Contraseña del admin (cambiala por una segura)
-const ADMIN_PASSWORD = 'admin123';
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Solo proteger rutas /admin (excepto /admin/login)
   if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
     const cookie = request.cookies.get('admin_auth');
 
-    if (!cookie || cookie.value !== ADMIN_PASSWORD) {
+    // ✅ Valida la firma HMAC (hoy o ayer)
+    if (!(await verificarToken(cookie?.value))) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }

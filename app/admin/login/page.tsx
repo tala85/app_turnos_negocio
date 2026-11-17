@@ -7,16 +7,32 @@ import Link from "next/link";
 export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setCargando(true);
 
-    if (password === "admin123") {
-      document.cookie = "admin_auth=admin123; path=/; max-age=86400";
-      router.push("/admin/reservas");
-    } else {
-      setError("Contraseña incorrecta");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        router.push("/admin/reservas");
+      } else {
+        setError(data.mensaje || "Contraseña incorrecta");
+      }
+    } catch {
+      setError("Error de conexión");
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -42,6 +58,7 @@ export default function LoginPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
               placeholder="Ingresá la contraseña"
               required
+              disabled={cargando}
             />
           </div>
 
@@ -49,9 +66,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 font-semibold"
+            disabled={cargando}
+            className="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Ingresar
+            {cargando ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
 
