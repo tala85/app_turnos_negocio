@@ -7,7 +7,6 @@ export async function POST(req: Request) {
 
     console.log("[pago/crear] Body recibido:", body);
 
-    // Validaciones
     if (!reservaId || !total || !sena || !cliente) {
       return NextResponse.json(
         { ok: false, mensaje: "Faltan datos" },
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar que tengamos el Access Token
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     if (!accessToken) {
       console.error("[pago/crear] ❌ Falta MERCADOPAGO_ACCESS_TOKEN");
@@ -25,28 +23,18 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("[pago/crear] ✅ Access Token encontrado");
-
-    // URL base de la app
-    const appUrl = "https://culminate-friend-coming.ngrok-free.dev";
+    // ✅ Derivar la URL base del propio request (funciona en local y en Vercel)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
     console.log("[pago/crear] App URL:", appUrl);
 
-    // ✅ URLs de retorno (hardcodeadas para probar)
     const backUrls = {
-      success:
-        "https://culminate-friend-coming.ngrok-free.dev/pago/exito?reservaId=" +
-        reservaId,
-      failure:
-        "https://culminate-friend-coming.ngrok-free.dev/pago/fallo?reservaId=" +
-        reservaId,
-      pending:
-        "https://culminate-friend-coming.ngrok-free.dev/pago/pendiente?reservaId=" +
-        reservaId,
+      success: `${appUrl}/pago/exito?reservaId=${reservaId}`,
+      failure: `${appUrl}/pago/fallo?reservaId=${reservaId}`,
+      pending: `${appUrl}/pago/pendiente?reservaId=${reservaId}`,
     };
 
     console.log("[pago/crear] Back URLs:", backUrls);
 
-    // Crear preferencia
     const payload = {
       items: [
         {
@@ -63,15 +51,11 @@ export async function POST(req: Request) {
       },
       external_reference: reservaId,
       back_urls: backUrls,
-      // auto_return: 'approved',  // Comentado temporalmente
-      // ✅ FORZAR MODO SANDBOX (prueba)
-      // sandbox_mode: true,  ← BORRAR O COMENTAR ESTA LÍNEA
+      auto_return: "approved",
+      // ⚠️ NO usar sandbox_mode: true (está deprecado en la API v1)
+      // En vez de eso, usamos las credenciales de prueba + sandbox_init_point
+      notification_url: `${appUrl}/api/pago/webhook`, // ← CLAVE: registra el webhook por preferencia
     };
-
-    console.log(
-      "[pago/crear] Payload completo:",
-      JSON.stringify(payload, null, 2),
-    );
 
     const response = await fetch(
       "https://api.mercadopago.com/checkout/preferences",
@@ -101,7 +85,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      initPoint: data.sandbox_init_point || data.init_point, // ← USAR SANDBOX
+      initPoint: data.sandbox_init_point || data.init_point,
       preferenceId: data.id,
     });
   } catch (e: unknown) {
