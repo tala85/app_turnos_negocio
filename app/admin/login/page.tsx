@@ -30,7 +30,9 @@ export default function LoginPage() {
         setError(data.mensaje || "Contraseña incorrecta");
       }
     } catch {
-      setError("Error de conexión");
+      setError(
+        "Necesitás conexión a internet para iniciar sesión. Conectate e intentá de nuevo.",
+      );
     } finally {
       setCargando(false);
     }
