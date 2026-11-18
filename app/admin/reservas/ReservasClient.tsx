@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
 import ModalDetalles from "./ModalDetalles";
 import { useTema, type Tema } from "@/lib/admin/tema";
-
+import { useReservasSync } from "@/hooks/useReservasSync";
+import SyncStatus from "@/components/admin/SyncStatus";
+import { useColaMutaciones } from "@/hooks/useColaMutaciones";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 export type Reserva = {
   id: string;
   estudio_id: string;
@@ -89,6 +92,7 @@ type SeccionReservasProps = {
   cambiarEstado: (id: string, estado: string) => void;
   mostrarConfirmar: boolean;
   mostrarCancelar: boolean;
+  pendientes: Set<string>;
 };
 
 function SeccionReservas({
@@ -100,6 +104,7 @@ function SeccionReservas({
   cambiarEstado,
   mostrarConfirmar,
   mostrarCancelar,
+  pendientes,
 }: SeccionReservasProps) {
   if (reservas.length === 0) return null;
 
@@ -179,6 +184,12 @@ function SeccionReservas({
                 <td className={`px-4 py-3 text-sm ${tema.texto}`}>
                   <div className="font-medium">
                     {r.cliente_nombre} {r.cliente_apellido}
+                    {/* ✅ Badge pendiente */}
+                    {pendientes.has(r.id) && (
+                      <span className="ml-2 bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full text-xs font-medium">
+                        ⏳ Pendiente
+                      </span>
+                    )}
                   </div>
                   <div className={`text-xs ${tema.texto2}`}>
                     DNI: {r.cliente_dni}{" "}
@@ -242,6 +253,12 @@ function SeccionReservas({
               <div>
                 <p className={`font-semibold ${tema.texto}`}>
                   {r.cliente_nombre} {r.cliente_apellido}
+                  {/* ✅ Badge pendiente */}
+                  {pendientes.has(r.id) && (
+                    <span className="ml-2 bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full text-xs font-medium">
+                      ⏳ Pendiente
+                    </span>
+                  )}
                 </p>
                 <p className={`text-xs ${tema.texto2}`}>DNI: {r.cliente_dni}</p>
               </div>
@@ -309,14 +326,24 @@ function SeccionReservas({
 export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
   const router = useRouter();
   const tema = useTema(); // ✅ UNA sola fuente de verdad
+  const { ultimoSync } = useReservasSync(reservas);
+
+  const { isOnline } = useOnlineStatus();
+  const { pendientes, encolar } = useColaMutaciones();
+
+  // ✅ Overrides locales: cambios offline que se ven al instante (sin setState en effect)
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const reservasMostrar = reservas.map((r) =>
+    overrides[r.id] ? { ...r, estado: overrides[r.id] } : r,
+  );
 
   const [detalles, setDetalles] = useState<ReservaDetalles | null>(null);
   const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
 
-  const bloqueadas = reservas.filter((r) => r.estado === "bloqueada");
-  const pagadas = reservas.filter((r) => r.estado === "pagada");
-  const confirmadas = reservas.filter((r) => r.estado === "confirmada");
-  const canceladas = reservas.filter((r) => r.estado === "cancelada");
+  const bloqueadas = reservasMostrar.filter((r) => r.estado === "bloqueada");
+  const pagadas = reservasMostrar.filter((r) => r.estado === "pagada");
+  const confirmadas = reservasMostrar.filter((r) => r.estado === "confirmada");
+  const canceladas = reservasMostrar.filter((r) => r.estado === "cancelada");
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -334,6 +361,16 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
   }, []);
 
   const cambiarEstado = async (id: string, estado: string) => {
+    const tipo = estado === "confirmada" ? "confirmar" : "cancelar";
+
+    // 🟡 OFFLINE → encolar + optimismo local
+    if (!isOnline) {
+      await encolar(tipo, id);
+      setOverrides((prev) => ({ ...prev, [id]: estado }));
+      return;
+    }
+
+    // 🟢 ONLINE → PATCH normal
     try {
       const res = await fetch(`/api/admin/reservas/${id}`, {
         method: "PATCH",
@@ -344,7 +381,9 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
       if (data.ok) window.location.reload();
       else alert(data.mensaje || "Error");
     } catch {
-      alert("Error de conexión");
+      // Se cayó la conexión justo ahora → encolar igual
+      await encolar(tipo, id);
+      setOverrides((prev) => ({ ...prev, [id]: estado }));
     }
   };
 
@@ -409,7 +448,8 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
         />
 
         {/* Botón de cerrar sesión discreto */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-between items-center mb-6">
+          <SyncStatus ultimoSync={ultimoSync} />
           <button
             onClick={async () => {
               await fetch("/api/admin/logout", { method: "POST" });
@@ -547,6 +587,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
             tema={tema}
             verDetalles={verDetalles}
             cambiarEstado={cambiarEstado}
+            pendientes={pendientes}
             mostrarConfirmar
             mostrarCancelar
           />
@@ -557,6 +598,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
             tema={tema}
             verDetalles={verDetalles}
             cambiarEstado={cambiarEstado}
+            pendientes={pendientes}
             mostrarConfirmar
             mostrarCancelar={false}
           />
@@ -567,6 +609,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
             tema={tema}
             verDetalles={verDetalles}
             cambiarEstado={cambiarEstado}
+            pendientes={pendientes}
             mostrarConfirmar={false}
             mostrarCancelar={false}
           />
@@ -577,6 +620,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
             tema={tema}
             verDetalles={verDetalles}
             cambiarEstado={cambiarEstado}
+            pendientes={pendientes}
             mostrarConfirmar={false}
             mostrarCancelar={false}
           />
