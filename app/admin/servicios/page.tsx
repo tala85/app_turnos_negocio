@@ -44,6 +44,12 @@ export default function AdminServiciosPage() {
               color: "purple",
             },
             {
+              href: "/admin/campanas",
+              label: "Campañas",
+              icono: "📣",
+              color: "fuchsia",
+            },
+            {
               href: "/admin/configuracion",
               label: "Personalización",
               icono: "🎨",

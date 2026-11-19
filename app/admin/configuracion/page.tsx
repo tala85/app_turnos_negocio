@@ -180,6 +180,12 @@ export default function AdminConfiguracionPage() {
               color: "purple",
             },
             {
+              href: "/admin/campanas",
+              label: "Campañas",
+              icono: "📣",
+              color: "fuchsia",
+            },
+            {
               href: "/admin/compartir",
               label: "Compartir",
               icono: "📢",

@@ -10,6 +10,7 @@ import SyncStatus from "@/components/admin/SyncStatus";
 import { useColaMutaciones } from "@/hooks/useColaMutaciones";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import ActivarNotificaciones from "@/components/admin/ActivarNotificaciones";
+
 export type Reserva = {
   id: string;
   estudio_id: string;
@@ -437,6 +438,12 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
               href: "/admin/configuracion",
               label: "Personalización",
               icono: "🎨",
+              color: "fuchsia",
+            },
+            {
+              href: "/admin/campanas",
+              label: "Campañas",
+              icono: "📣",
               color: "fuchsia",
             },
             {

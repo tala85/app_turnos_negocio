@@ -124,6 +124,7 @@ export type Mutacion = {
   tipo: "confirmar" | "cancelar" | "crear";
   reservaId: string;
   timestamp: string;
+  intentos?: number;
 };
 
 export async function agregarMutacion(

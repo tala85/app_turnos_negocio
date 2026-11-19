@@ -28,7 +28,12 @@ export function usePushNotifications(estudioId: string) {
       }
 
       try {
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+          // Sin Service Worker (desarrollo) no hay push: no nos quedamos colgados
+          if (!cancelado) setEstado("no-soportado");
+          return;
+        }
         const suscripcion = await registration.pushManager.getSubscription();
         console.log(
           "[push] suscripcion navegador:",
@@ -66,7 +71,14 @@ export function usePushNotifications(estudioId: string) {
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        setEstado("sin-permiso");
+        setError(
+          "Las notificaciones requieren el Service Worker: probalas en producción (Vercel).",
+        );
+        return;
+      }
       const suscripcion = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(

@@ -24,7 +24,7 @@ export default function ActivarNotificaciones({
   if (estado === "no-soportado") {
     return (
       <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 text-sm text-gray-600 dark:text-gray-400">
-        🔕 Tu navegador no soporta notificaciones push.
+        🔕 Notificaciones push no disponibles en este entorno. En producción (Vercel) sí funcionan.
       </div>
     );
   }

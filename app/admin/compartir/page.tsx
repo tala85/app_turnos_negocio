@@ -5,7 +5,6 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import { useTema } from "@/lib/admin/tema";
 import { QRCodeSVG } from "qrcode.react";
 
-
 const ESTUDIO_ID = "2441c401-ae11-4037-ab80-4725c0304840";
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -133,6 +132,12 @@ export default function AdminCompartirPage() {
               label: "Reservas",
               icono: "📋",
               color: "emerald",
+            },
+            {
+              href: "/admin/campanas",
+              label: "Campañas",
+              icono: "📣",
+              color: "fuchsia",
             },
             {
               href: "/admin/configuracion",

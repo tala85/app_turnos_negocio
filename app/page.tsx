@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import Image from "next/image";
 import RedesSociales from "@/components/ui/RedesSociales";
+import BannerCampanas from "@/components/BannerCampanas"; // ✅ 1. IMPORT AGREGADO
 
 async function getConfiguracion() {
   try {
@@ -13,13 +14,14 @@ async function getConfiguracion() {
     const { data } = await supabase
       .from("estudios")
       .select(
-        "nombre, logo_url, slogan, color_primario, color_secundario, color_fondo, whatsapp, direccion, instagram, facebook",
+        "id, nombre, logo_url, slogan, color_primario, color_secundario, color_fondo, whatsapp, direccion, instagram, facebook", // ✅ 2. AGREGADO "id" AQUÍ
       )
       .eq("slug", "belleza-posadas")
       .single();
 
     return (
       data || {
+        id: "2441c401-ae11-4037-ab80-4725c0304840", // Fallback por si acaso
         nombre: "Belleza Posadas",
         logo_url: null,
         slogan: "Tu belleza, nuestra pasión",
@@ -34,6 +36,7 @@ async function getConfiguracion() {
     );
   } catch {
     return {
+      id: "2441c401-ae11-4037-ab80-4725c0304840",
       nombre: "Belleza Posadas",
       logo_url: null,
       slogan: "Tu belleza, nuestra pasión",
@@ -89,6 +92,13 @@ export default async function HomePage() {
         </div>
       </header>
 
+      {/* ✅ 3. BANNER DE CAMPAÑAS (Insertado aquí, entre el header y el hero) */}
+      <div className="w-full px-4 pt-6 pb-2">
+        <div className="max-w-6xl mx-auto">
+          <BannerCampanas estudioId={config.id} estudioSlug={slug} />
+        </div>
+      </div>
+
       {/* Hero en formato split: logo a la izquierda, texto a la derecha */}
       <main className="flex-grow flex items-center px-4 py-10 md:py-16 bg-gradient-to-br from-white via-white to-gray-50">
         <div className="max-w-6xl mx-auto w-full grid md:grid-cols-2 gap-10 md:gap-14 items-center">
@@ -130,7 +140,7 @@ export default async function HomePage() {
                 "Reservá tu turno de forma rápida, fácil y segura."}
             </p>
 
-            {/* CTA principal movido acá para que esté a la vista */}
+            {/* CTA principal */}
             <div className="pt-2">
               <Link
                 href={`/${slug}/reservar`}
@@ -156,7 +166,7 @@ export default async function HomePage() {
         style={{ backgroundColor: config.color_primario }}
       />
 
-      {/* Beneficios: los separamos del hero para que tengan su propio espacio */}
+      {/* Beneficios */}
       <section className="px-4 pb-16 bg-white">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 text-left">
           {[

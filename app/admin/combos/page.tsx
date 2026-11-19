@@ -184,6 +184,12 @@ export default function AdminCombosPage() {
               color: "emerald",
             },
             {
+              href: "/admin/campanas",
+              label: "Campañas",
+              icono: "📣",
+              color: "fuchsia",
+            },
+            {
               href: "/admin/servicios",
               label: "Servicios",
               icono: "💅",
