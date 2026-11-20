@@ -93,7 +93,7 @@ export default function AdminHeader({
           ))}
 
           <Link
-            href="/"
+            href="/admin"
             className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors ${tema.borde} ${tema.texto2} hover:${tema.texto}`}
           >
             ← Inicio

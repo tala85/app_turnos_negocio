@@ -1,30 +1,21 @@
-import { obtenerEstudioPorSlug } from '@/lib/estudios';
-import LoginCliente from './LoginCliente';
+import { redirect } from "next/navigation";
+import { obtenerEstudioDeSesion } from "@/lib/auth";
+import { adminDb } from "@/lib/supabase/admin";
 
-export default async function LoginEstudioPage({
-  params,
-}: {
-  params: Promise<{ estudio: string }>;
-}) {
-  const { estudio: slug } = await params;
-  const estudio = await obtenerEstudioPorSlug(slug);
+export default async function AdminHome() {
+  // 1. Leemos el estudio de la cookie de sesión (no de la URL)
+  const estudioId = await obtenerEstudioDeSesion();
 
-  if (!estudio) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Estudio no encontrado</p>
-      </div>
-    );
-  }
+  // 2. Si no hay sesión, mandamos a la plataforma pública
+  if (!estudioId) redirect("/plataforma");
 
-  return (
-    <LoginCliente
-      estudio={{
-        slug: estudio.slug,
-        nombre: estudio.nombre,
-        logo_url: estudio.logo_url,
-        color_primario: estudio.color_primario,
-      }}
-    />
-  );
+  // 3. Buscamos el slug de este estudio
+  const { data } = await adminDb
+    .from("estudios")
+    .select("slug")
+    .eq("id", estudioId)
+    .single();
+
+  // 4. Redirigimos a la vitrina de TU estudio (ej: /belleza-posadas)
+  redirect(`/${data?.slug ?? ""}`);
 }

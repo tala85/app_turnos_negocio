@@ -1,16 +1,38 @@
 import { NextResponse } from "next/server";
+import { adminDb } from "@/lib/supabase/admin"; // ✅ AGREGADO: para validar contra la BD
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { reservaId, total, sena, cliente } = body;
+    const { reservaId } = body; // ✅ Solo pedimos el ID. Los montos los sacamos de la BD.
 
-    console.log("[pago/crear] Body recibido:", body);
-
-    if (!reservaId || !total || !sena || !cliente) {
+    if (!reservaId) {
       return NextResponse.json(
-        { ok: false, mensaje: "Faltan datos" },
+        { ok: false, mensaje: "Falta reservaId" },
         { status: 400 },
+      );
+    }
+
+    // 🔒 BLINDAJE 1: Verificar que la reserva existe, es legítima y no está ya pagada
+    const { data: reserva, error: dbError } = await adminDb
+      .from("reservas")
+      .select(
+        "id, estado, sena, total, cliente_nombre, cliente_apellido, estudio_id",
+      )
+      .eq("id", reservaId)
+      .single();
+
+    if (dbError || !reserva) {
+      return NextResponse.json(
+        { ok: false, mensaje: "Reserva no encontrada o inválida" },
+        { status: 404 },
+      );
+    }
+
+    if (reserva.estado === "pagada" || reserva.estado === "cancelada") {
+      return NextResponse.json(
+        { ok: false, mensaje: "Esta reserva ya fue procesada" },
+        { status: 409 },
       );
     }
 
@@ -23,38 +45,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Derivar la URL base del propio request (funciona en local y en Vercel)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
-    console.log("[pago/crear] App URL:", appUrl);
-
-    const backUrls = {
-      success: `${appUrl}/pago/exito?reservaId=${reservaId}`,
-      failure: `${appUrl}/pago/fallo?reservaId=${reservaId}`,
-      pending: `${appUrl}/pago/pendiente?reservaId=${reservaId}`,
-    };
-
-    console.log("[pago/crear] Back URLs:", backUrls);
 
     const payload = {
       items: [
         {
-          title: `Seña para reserva - ${cliente.nombre} ${cliente.apellido}`,
+          title: `Seña para reserva - ${reserva.cliente_nombre} ${reserva.cliente_apellido}`,
           description: `Reserva ID: ${reservaId}`,
           quantity: 1,
-          unit_price: Number(sena),
+          // 🔒 BLINDAJE 2: Usar el monto REAL de la BD, ignorando lo que diga el frontend
+          unit_price: Number(reserva.sena),
           currency_id: "ARS",
         },
       ],
       payer: {
-        name: cliente.nombre,
-        surname: cliente.apellido,
+        name: reserva.cliente_nombre,
+        surname: reserva.cliente_apellido,
       },
       external_reference: reservaId,
-      back_urls: backUrls,
+      back_urls: {
+        success: `${appUrl}/pago/exito?reservaId=${reservaId}`,
+        failure: `${appUrl}/pago/fallo?reservaId=${reservaId}`,
+        pending: `${appUrl}/pago/pendiente?reservaId=${reservaId}`,
+      },
       auto_return: "approved",
-      // ⚠️ NO usar sandbox_mode: true (está deprecado en la API v1)
-      // En vez de eso, usamos las credenciales de prueba + sandbox_init_point
-      notification_url: `${appUrl}/api/pago/webhook`, // ← CLAVE: registra el webhook por preferencia
+      notification_url: `${appUrl}/api/pago/webhook`,
     };
 
     const response = await fetch(
@@ -70,11 +85,6 @@ export async function POST(req: Request) {
     );
 
     const data = await response.json();
-
-    console.log("[pago/crear] Respuesta de MP:", {
-      status: response.status,
-      data: data,
-    });
 
     if (!response.ok) {
       return NextResponse.json(

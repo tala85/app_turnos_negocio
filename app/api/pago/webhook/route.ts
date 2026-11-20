@@ -34,10 +34,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, mensaje: "Ignorado" });
     }
 
-    // 2. Validar firma (la doble verificación es la definitiva)
+    // 2. Validar firma (la doble verificación es la definitiva, pero esto alerta de manipulaciones)
     if (!validarFirmaMP(req)) {
       console.warn(
-        "⚠️ Webhook con firma inválida o faltante. Se procederá a la doble verificación.",
+        "⚠️ Webhook con firma inválida. Se procederá a la doble verificación, pero es sospechoso.",
       );
     }
 
@@ -58,6 +58,33 @@ export async function POST(req: Request) {
     if (payment.status === "approved") {
       const reservaId = payment.external_reference;
 
+      // 🔒 BLINDAJE 3: Verificar que la reserva exista antes de intentar actualizarla
+      const { data: reserva, error: reservaError } = await adminDb
+        .from("reservas")
+        .select(
+          "estudio_id, cliente_nombre, cliente_apellido, total, sena, estado",
+        )
+        .eq("id", reservaId)
+        .single();
+
+      if (reservaError || !reserva) {
+        console.error(
+          `[webhook] Reserva ${reservaId} no encontrada para el pago ${paymentId}`,
+        );
+        return NextResponse.json(
+          { ok: false, mensaje: "Reserva no encontrada" },
+          { status: 404 },
+        );
+      }
+
+      // 🔒 BLINDAJE 4: Idempotencia. Si ya está pagada, no hacer nada (MP a veces envía notificaciones duplicadas)
+      if (reserva.estado === "pagada") {
+        console.log(
+          `[webhook] Reserva ${reservaId} ya estaba pagada. Ignorando notificación duplicada.`,
+        );
+        return NextResponse.json({ ok: true, mensaje: "Ya procesado" });
+      }
+
       // Actualizar turnos
       await adminDb
         .from("turnos")
@@ -71,14 +98,8 @@ export async function POST(req: Request) {
         .eq("id", reservaId);
 
       // Registrar el pago
-      const { data: reserva } = await adminDb
-        .from("reservas")
-        .select("estudio_id, cliente_nombre, cliente_apellido, total, sena")
-        .eq("id", reservaId)
-        .single();
-
       await adminDb.from("pagos").insert({
-        estudio_id: reserva?.estudio_id,
+        estudio_id: reserva.estudio_id,
         reserva_id: reservaId,
         mp_payment_id: paymentId,
         monto: payment.transaction_amount,
@@ -88,21 +109,16 @@ export async function POST(req: Request) {
 
       console.log(`✅ Pago aprobado y registrado: ${reservaId}`);
 
-      // ═══════════════════════════════════════════════
-      // 🔔 NUEVO: notificar al estudio (con try/catch propio
-      // para que un fallo de push NUNCA rompa el webhook)
-      // ═══════════════════════════════════════════════
-      if (reserva?.estudio_id) {
+      // Notificar al estudio
+      if (reserva.estudio_id) {
         try {
           await enviarNotificacionAEstudio(reserva.estudio_id, {
             titulo: "💰 Nueva seña pagada",
             cuerpo: `${reserva.cliente_nombre} ${reserva.cliente_apellido} · Seña $${reserva.sena?.toLocaleString("es-AR")} · Total $${reserva.total?.toLocaleString("es-AR")}`,
             url: "/admin/reservas",
-            tag: `pago-${reservaId}`, // evita que se apilen notificaciones de la misma reserva
+            tag: `pago-${reservaId}`,
           });
-          console.log("🔔 Notificación de pago enviada");
         } catch (e) {
-          // Importante: NO re-lanzar. MP no debe reintentar el webhook por un fallo de push.
           console.error("[webhook] fallo enviando notificación:", e);
         }
       }
