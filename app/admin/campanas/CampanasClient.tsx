@@ -19,6 +19,7 @@ export type Campana = {
   servicio_id: string | null;
   fecha_inicio: string;
   fecha_fin: string;
+  fechas_especificas: string[] | null;
   cupos: number | null;
   precio_especial: number | null;
   activa: boolean;
@@ -115,10 +116,8 @@ export default function CampanasClient({
   // ✅ FIX: recibe CampanaForm (tipo unificado), no Campana
   const guardarCampana = async (data: CampanaForm) => {
     const method = data.id ? "PATCH" : "POST";
-    // ✅ FIX: solo spread, sin id redundante
-    const body = data.id
-      ? { ...data }
-      : { estudioId: "2441c401-ae11-4037-ab80-4725c0304840", ...data };
+    // ✅ Sin estudioId: el servidor lo deriva de la sesión
+    const body = { ...data };
 
     const res = await fetch("/api/admin/campanas", {
       method,
@@ -144,6 +143,7 @@ export default function CampanasClient({
       servicio_id: c.servicio_id,
       fecha_inicio: c.fecha_inicio,
       fecha_fin: c.fecha_fin,
+      fechas_especificas: c.fechas_especificas,
       cupos: c.cupos,
       precio_especial: c.precio_especial,
       activa: c.activa,

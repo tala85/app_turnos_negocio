@@ -1,123 +1,118 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/supabase/admin";
-import { verificarAdmin } from "@/lib/auth";
+import { obtenerEstudioDeSesion } from "@/lib/auth";
 
-// GET: Obtener servicios de un estudio
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const estudioId = searchParams.get("estudioId");
+const noAutorizado = () =>
+  NextResponse.json({ ok: false, mensaje: "No autorizado" }, { status: 401 });
 
-  if (!estudioId) {
-    return NextResponse.json(
-      { ok: false, mensaje: "Falta estudioId" },
-      { status: 400 },
-    );
-  }
+export async function GET() {
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) return noAutorizado();
 
   const { data, error } = await adminDb
     .from("servicios")
     .select("*")
-    .eq("estudio_id", estudioId)
-    .order("orden", { ascending: true });
+    .eq("estudio_id", estudioId) // ← filtro de tenant desde la SESIÓN
+    .order("nombre", { ascending: true });
 
   if (error)
     return NextResponse.json(
       { ok: false, mensaje: error.message },
       { status: 500 },
     );
+  return NextResponse.json({ ok: true, data: data || [] });
+}
 
+export async function POST(req: NextRequest) {
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) return noAutorizado();
+
+  const body = await req.json();
+  const { nombre, descripcion, precio, duracion_min, activo } = body;
+
+  const { data, error } = await adminDb
+    .from("servicios")
+    .insert({
+      estudio_id: estudioId, // ← de la sesión, NUNCA del body
+      nombre,
+      descripcion,
+      precio,
+      duracion_min,
+      activo: activo ?? true,
+    })
+    .select()
+    .single();
+
+  if (error)
+    return NextResponse.json(
+      { ok: false, mensaje: error.message },
+      { status: 500 },
+    );
   return NextResponse.json({ ok: true, data });
 }
 
-// POST: Crear un nuevo servicio
-export async function POST(req: Request) {
-  if (!(await verificarAdmin())) {
+export async function PATCH(req: NextRequest) {
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) return noAutorizado();
+
+  const body = await req.json();
+  const { id, ...cambios } = body;
+  if (!id)
     return NextResponse.json(
-      { ok: false, mensaje: "No autorizado" },
-      { status: 401 },
+      { ok: false, mensaje: "Falta id" },
+      { status: 400 },
+    );
+
+  // Doble filtro: solo puede tocar filas de ESTE estudio
+  const { data, error } = await adminDb
+    .from("servicios")
+    .update(cambios)
+    .eq("id", id)
+    .eq("estudio_id", estudioId)
+    .select();
+
+  if (error)
+    return NextResponse.json(
+      { ok: false, mensaje: error.message },
+      { status: 500 },
+    );
+  if (!data || data.length === 0) {
+    return NextResponse.json(
+      { ok: false, mensaje: "No encontrado" },
+      { status: 404 },
     );
   }
-  try {
-    const body = await req.json();
-    const { estudio_id, nombre, descripcion, precio, duracion_min, activo } =
-      body;
-
-    const { data, error } = await adminDb
-      .from("servicios")
-      .insert({
-        estudio_id,
-        nombre,
-        descripcion,
-        precio,
-        duracion_min,
-        activo: activo ?? true,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({ ok: true, data });
-  } catch (e: unknown) {
-    const mensaje = e instanceof Error ? e.message : "Error al crear servicio";
-    return NextResponse.json({ ok: false, mensaje }, { status: 500 });
-  }
+  return NextResponse.json({ ok: true, data: data[0] });
 }
 
-// PATCH: Actualizar un servicio
-export async function PATCH(req: Request) {
-  if (!(await verificarAdmin())) {
+export async function DELETE(req: NextRequest) {
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) return noAutorizado();
+
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id)
     return NextResponse.json(
-      { ok: false, mensaje: "No autorizado" },
-      { status: 401 },
+      { ok: false, mensaje: "Falta id" },
+      { status: 400 },
+    );
+
+  const { data, error } = await adminDb
+    .from("servicios")
+    .delete()
+    .eq("id", id)
+    .eq("estudio_id", estudioId)
+    .select();
+
+  if (error)
+    return NextResponse.json(
+      { ok: false, mensaje: error.message },
+      { status: 500 },
+    );
+  if (!data || data.length === 0) {
+    return NextResponse.json(
+      { ok: false, mensaje: "No encontrado" },
+      { status: 404 },
     );
   }
-  try {
-    const body = await req.json();
-    const { id, ...datosActualizados } = body;
-
-    const { data, error } = await adminDb
-      .from("servicios")
-      .update(datosActualizados)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({ ok: true, data });
-  } catch (e: unknown) {
-    const mensaje = e instanceof Error ? e.message : "Error al actualizar";
-    return NextResponse.json({ ok: false, mensaje }, { status: 500 });
-  }
-}
-
-// DELETE: Eliminar un servicio
-export async function DELETE(req: Request) {
-  if (!(await verificarAdmin())) {
-    return NextResponse.json(
-      { ok: false, mensaje: "No autorizado" },
-      { status: 401 },
-    );
-  }
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { ok: false, mensaje: "Falta id" },
-        { status: 400 },
-      );
-    }
-
-    const { error } = await adminDb.from("servicios").delete().eq("id", id);
-
-    if (error) throw error;
-
-    return NextResponse.json({ ok: true, mensaje: "Servicio eliminado" });
-  } catch (e: unknown) {
-    const mensaje = e instanceof Error ? e.message : "Error al eliminar";
-    return NextResponse.json({ ok: false, mensaje }, { status: 500 });
-  }
+  return NextResponse.json({ ok: true });
 }

@@ -1,26 +1,31 @@
+import { redirect } from "next/navigation";
 import { adminDb } from "@/lib/supabase/admin";
+import { obtenerEstudioDeSesion } from "@/lib/auth";
 import CampanasClient from "./CampanasClient";
 
-const ESTUDIO_ID = "2441c401-ae11-4037-ab80-4725c0304840";
+const ESTUDIO_DEFAULT_SLUG = "belleza-posadas";
 
 export default async function AdminCampanasPage() {
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) redirect(`/${ESTUDIO_DEFAULT_SLUG}/admin/login`);
+
   const { data: campanas, error } = await adminDb
     .from("campanas")
     .select("*, combos(nombre), servicios(nombre)")
-    .eq("estudio_id", ESTUDIO_ID)
+    .eq("estudio_id", estudioId)
     .order("orden", { ascending: true })
     .order("created_at", { ascending: false });
 
   const { data: combos } = await adminDb
     .from("combos")
     .select("id, nombre")
-    .eq("estudio_id", ESTUDIO_ID)
+    .eq("estudio_id", estudioId)
     .eq("activo", true);
 
   const { data: servicios } = await adminDb
     .from("servicios")
     .select("id, nombre")
-    .eq("estudio_id", ESTUDIO_ID)
+    .eq("estudio_id", estudioId)
     .eq("activo", true);
 
   if (error) {

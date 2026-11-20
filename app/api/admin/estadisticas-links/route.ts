@@ -1,41 +1,29 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/supabase/admin";
-import { verificarAdmin } from "@/lib/auth";
+import { obtenerEstudioDeSesion } from "@/lib/auth";
 
-// ✅ Definimos el tipo exacto de lo que devuelve la base de datos
 type ClickRow = {
   origen: string;
 };
 
-export async function GET(req: Request) {
-  if (!(await verificarAdmin())) {
-    return NextResponse.json(
-      { ok: false, mensaje: "No autorizado" },
-      { status: 401 },
-    );
-  }
+const noAutorizado = () =>
+  NextResponse.json({ ok: false, mensaje: "No autorizado" }, { status: 401 });
 
-  const { searchParams } = new URL(req.url);
-  const estudioId = searchParams.get("estudioId");
-
-  if (!estudioId) {
-    return NextResponse.json(
-      { ok: false, mensaje: "Falta estudioId" },
-      { status: 400 },
-    );
-  }
+export async function GET() {
+  // ✅ El estudio viene de la sesión (cookie firmada), no del cliente
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) return noAutorizado();
 
   try {
     const { data, error } = await adminDb
       .from("link_clicks")
-      .select("origen") // Solo necesitamos esta columna
-      .eq("estudio_id", estudioId)
+      .select("origen")
+      .eq("estudio_id", estudioId) // ← FILTRO DE TENANT
       .order("created_at", { ascending: false })
       .limit(1000);
 
     if (error) throw error;
 
-    // ✅ Ahora TypeScript sabe que 'row' es de tipo ClickRow
     const agrupado: Record<string, number> = {};
     data?.forEach((row: ClickRow) => {
       agrupado[row.origen] = (agrupado[row.origen] || 0) + 1;

@@ -1,11 +1,23 @@
-import { adminDb } from '@/lib/supabase/admin';
-import ReservasClient from './ReservasClient';
+import { redirect } from "next/navigation";
+import { adminDb } from "@/lib/supabase/admin";
+import { obtenerEstudioDeSesion } from "@/lib/auth";
+import ReservasClient from "./ReservasClient";
+
+const ESTUDIO_DEFAULT_SLUG = "belleza-posadas";
 
 export default async function AdminReservasPage() {
+  // 1. Verificar sesión: si no hay, redirigir al login del estudio
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) {
+    redirect(`/${ESTUDIO_DEFAULT_SLUG}/admin/login`);
+  }
+
+  // 2. Cargar SOLO las reservas de ese estudio (aislamiento real)
   const { data: reservas, error } = await adminDb
-    .from('reservas')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .from("reservas")
+    .select("*")
+    .eq("estudio_id", estudioId) // ← FILTRO DE TENANT
+    .order("created_at", { ascending: false });
 
   if (error) {
     return (
@@ -20,5 +32,6 @@ export default async function AdminReservasPage() {
     );
   }
 
-  return <ReservasClient reservas={reservas || []} />;
+  // 3. Pasar el estudioId al cliente (en vez de la constante hardcodeada)
+  return <ReservasClient reservas={reservas || []} estudioId={estudioId} />;
 }

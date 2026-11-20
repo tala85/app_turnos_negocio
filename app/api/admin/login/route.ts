@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { generarToken } from "@/lib/auth-token";
+import { obtenerEstudioPorSlug } from "@/lib/estudios";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { password } = body;
-    console.log("🔐 Password recibida:", password);
-    console.log("🔐 Password esperada:", process.env.ADMIN_PASSWORD);
-    console.log("🔐 Coinciden:", password === process.env.ADMIN_PASSWORD);
 
-    // ✅ La contraseña se compara en el servidor, NO en el cliente
     const passwordCorrecta = process.env.ADMIN_PASSWORD || "admin123";
-
     if (password !== passwordCorrecta) {
       return NextResponse.json(
         { ok: false, mensaje: "Contraseña incorrecta" },
@@ -20,8 +16,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ Cookie httpOnly: JavaScript NO puede leerla ni modificarla
-    const token = await generarToken();
+    // Puente temporal: el login viejo emite token del estudio default
+    const estudio = await obtenerEstudioPorSlug("belleza-posadas");
+    const token = await generarToken(
+      estudio?.id ?? "2441c401-ae11-4037-ab80-4725c0304840",
+    );
+
     const cookieStore = await cookies();
     cookieStore.set("admin_auth", token, {
       httpOnly: true,

@@ -1,4 +1,4 @@
-import { ESTUDIO_ID, type Servicio, type ServicioPayload } from "./types";
+import type { Servicio, ServicioPayload } from "./types";
 
 const API = "/api/admin/servicios";
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -11,7 +11,7 @@ async function leer(res: Response) {
 
 export const serviciosApi = {
   async listar(): Promise<Servicio[]> {
-    const res = await fetch(`${API}?estudioId=${ESTUDIO_ID}`, { cache: "no-store" });
+    const res = await fetch(API, { cache: "no-store" });
     const data = await leer(res);
     return (data.data ?? []) as Servicio[];
   },
@@ -20,7 +20,7 @@ export const serviciosApi = {
     const res = await fetch(API, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: JSON.stringify({ estudio_id: ESTUDIO_ID, activo, ...payload }),
+      body: JSON.stringify({ activo, ...payload }),
     });
     await leer(res);
   },

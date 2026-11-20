@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { adminDb, adminStorage } from "@/lib/supabase/admin";
+import { obtenerEstudioDeSesion } from "@/lib/auth";
 
-// GET: Obtener configuración del estudio
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const estudioId = searchParams.get("estudioId");
+const noAutorizado = () =>
+  NextResponse.json({ ok: false, mensaje: "No autorizado" }, { status: 401 });
 
-  if (!estudioId) {
-    return NextResponse.json(
-      { ok: false, mensaje: "Falta estudioId" },
-      { status: 400 },
-    );
-  }
+// GET: Obtener configuración del estudio (desde sesión)
+export async function GET() {
+  const estudioId = await obtenerEstudioDeSesion();
+  if (!estudioId) return noAutorizado();
 
   const { data, error } = await adminDb
     .from("estudios")
@@ -19,11 +16,12 @@ export async function GET(req: Request) {
     .eq("id", estudioId)
     .single();
 
-  if (error)
+  if (error) {
     return NextResponse.json(
       { ok: false, mensaje: error.message },
       { status: 500 },
     );
+  }
 
   return NextResponse.json({ ok: true, data });
 }
@@ -31,8 +29,10 @@ export async function GET(req: Request) {
 // PUT: Actualizar configuración (incluye logo)
 export async function PUT(req: Request) {
   try {
+    const estudioId = await obtenerEstudioDeSesion();
+    if (!estudioId) return noAutorizado();
+
     const formData = await req.formData();
-    const estudioId = formData.get("estudioId") as string;
     const nombre = formData.get("nombre") as string;
     const slogan = formData.get("slogan") as string;
     const colorPrimario = formData.get("colorPrimario") as string;
@@ -40,24 +40,12 @@ export async function PUT(req: Request) {
     const colorFondo = formData.get("colorFondo") as string;
     const logo = formData.get("logo") as File | null;
 
-    // 🔍 LOG DE DEPURACIÓN
-    console.log("=== DATOS RECIBIDOS EN EL API ===");
-    console.log("estudioId:", estudioId);
-    console.log("nombre:", nombre);
-    console.log("slogan:", slogan);
-
-    if (!estudioId) {
-      return NextResponse.json(
-        { ok: false, mensaje: "Falta estudioId" },
-        { status: 400 },
-      );
-    }
-
     let logoUrl: string | undefined;
 
     // Si se subió un logo, subirlo a Supabase Storage
     if (logo && logo.size > 0) {
       const extension = logo.name.split(".").pop() || "png";
+      // ✅ El path usa el estudioId de la sesión para aislamiento
       const fileName = `${estudioId}/logo.${extension}`;
 
       const { error: uploadError } = await adminStorage

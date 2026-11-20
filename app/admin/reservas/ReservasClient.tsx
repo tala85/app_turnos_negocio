@@ -65,8 +65,6 @@ type Estadisticas = {
   turnosHoy: Reserva[];
 };
 
-const ESTUDIO_ID = "2441c401-ae11-4037-ab80-4725c0304840";
-
 const formatearFecha = (iso: string) =>
   new Date(iso).toLocaleString("es-AR", {
     day: "2-digit",
@@ -325,7 +323,13 @@ function SeccionReservas({
 }
 
 // --- COMPONENTE PRINCIPAL ---
-export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
+export default function ReservasClient({
+  reservas,
+  estudioId,
+}: {
+  reservas: Reserva[];
+  estudioId: string;
+}) {
   const router = useRouter();
   const tema = useTema(); // ✅ UNA sola fuente de verdad
   const { ultimoSync } = useReservasSync(reservas);
@@ -351,7 +355,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
     const cargarDatos = async () => {
       try {
         const resEst = await fetch(
-          `/api/admin/estadisticas?estudioId=${ESTUDIO_ID}`,
+          `/api/admin/estadisticas?estudioId=${estudioId}`,
         );
         const dataEst = await resEst.json();
         if (dataEst.ok) setEstadisticas(dataEst.data);
@@ -360,7 +364,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
       }
     };
     cargarDatos();
-  }, []);
+  }, [estudioId]);
 
   const cambiarEstado = async (id: string, estado: string) => {
     const tipo = estado === "confirmada" ? "confirmar" : "cancelar";
@@ -470,7 +474,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
         </div>
 
         <div className="mb-6">
-          <ActivarNotificaciones estudioId={ESTUDIO_ID} />
+          <ActivarNotificaciones estudioId={estudioId} />
         </div>
 
         {/* ESTADÍSTICAS */}

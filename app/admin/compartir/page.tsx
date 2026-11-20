@@ -5,10 +5,8 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import { useTema } from "@/lib/admin/tema";
 import { QRCodeSVG } from "qrcode.react";
 
-const ESTUDIO_ID = "2441c401-ae11-4037-ab80-4725c0304840";
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
-// ✅ Tipo definido para las estadísticas
 type Estadistica = {
   origen: string;
   cantidad: number;
@@ -20,13 +18,13 @@ export default function AdminCompartirPage() {
   const [origenSeleccionado, setOrigenSeleccionado] = useState("whatsapp");
   const [estadisticas, setEstadisticas] = useState<Estadistica[]>([]);
   const [totalClicks, setTotalClicks] = useState(0);
+  const [slug, setSlug] = useState<string>(""); // ✅ Nuevo: para armar el link público
 
   // Función reutilizable para el botón "Actualizar"
   const cargarStats = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/admin/estadisticas-links?estudioId=${ESTUDIO_ID}`,
-      );
+      // ✅ Sin estudioId: el servidor lo deriva de la sesión
+      const res = await fetch("/api/admin/estadisticas-links");
       const data = await res.json();
       if (data.ok) {
         setEstadisticas(data.data);
@@ -41,25 +39,31 @@ export default function AdminCompartirPage() {
     }
   }, []);
 
-  // El efecto llama a una función interna async → setState post-await, permitido
   useEffect(() => {
     let cancelado = false;
     const cargar = async () => {
       try {
-        const res = await fetch(
-          `/api/admin/estadisticas-links?estudioId=${ESTUDIO_ID}`,
-        );
-        const data = await res.json();
-        if (!cancelado && data.ok) {
-          setEstadisticas(data.data);
-          const total = data.data.reduce(
-            (acc: number, curr: Estadistica) => acc + curr.cantidad,
-            0,
-          );
-          setTotalClicks(total);
+        // 1. Obtenemos la config para tener el slug (para generar el link público correcto)
+        const resConfig = await fetch("/api/admin/configuracion");
+        const dataConfig = await resConfig.json();
+
+        // 2. Obtenemos las estadísticas (el servidor ya sabe el estudio por la sesión)
+        const resStats = await fetch("/api/admin/estadisticas-links");
+        const dataStats = await resStats.json();
+
+        if (!cancelado) {
+          if (dataConfig.ok) setSlug(dataConfig.data.slug);
+          if (dataStats.ok) {
+            setEstadisticas(dataStats.data);
+            const total = dataStats.data.reduce(
+              (acc: number, curr: Estadistica) => acc + curr.cantidad,
+              0,
+            );
+            setTotalClicks(total);
+          }
         }
       } catch (error) {
-        console.error("Error cargando estadísticas:", error);
+        console.error("Error cargando:", error);
       }
     };
     cargar();
@@ -68,8 +72,12 @@ export default function AdminCompartirPage() {
     };
   }, []);
 
+  // ✅ Link profesional: /belleza-posadas/reservar?origen=whatsapp
   const generarLink = (origen: string) => {
-    return `${BASE_URL}/api/r?o=${origen}`;
+    if (slug) {
+      return `${BASE_URL}/${slug}/reservar?origen=${origen}`;
+    }
+    return `${BASE_URL}/api/r?o=${origen}`; // Fallback por si acaso
   };
 
   const copiarAlPortapapeles = async () => {
@@ -86,7 +94,6 @@ export default function AdminCompartirPage() {
   };
 
   const descargarQR = () => {
-    // ✅ Forma correcta y segura de obtener un elemento SVG en TypeScript
     const svg = document.querySelector<SVGSVGElement>("#qr-code");
     if (!svg) return;
 

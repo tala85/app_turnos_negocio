@@ -1,5 +1,3 @@
-import { ESTUDIO_ID } from "@/features/servicios/types";
-
 const API = "/api/admin/combos";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -28,7 +26,7 @@ async function leer(res: Response) {
 
 export const combosApi = {
   async listar(): Promise<Combo[]> {
-    const res = await fetch(`${API}?estudioId=${ESTUDIO_ID}`, { cache: "no-store" });
+    const res = await fetch(API, { cache: "no-store" });
     const data = await leer(res);
     return (data.data ?? []) as Combo[];
   },
@@ -37,12 +35,15 @@ export const combosApi = {
     const res = await fetch(API, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: JSON.stringify({ estudioId: ESTUDIO_ID, ...payload, activo: true }),
+      body: JSON.stringify({ ...payload, activo: true }),
     });
     await leer(res);
   },
 
-  async actualizar(id: string, cambios: Partial<ComboPayload> & { activo?: boolean }): Promise<void> {
+  async actualizar(
+    id: string,
+    cambios: Partial<ComboPayload> & { activo?: boolean },
+  ): Promise<void> {
     const res = await fetch(API, {
       method: "PATCH",
       headers: JSON_HEADERS,

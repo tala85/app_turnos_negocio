@@ -2,37 +2,72 @@ const encoder = new TextEncoder();
 
 async function hmacHex(message: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['sign'],
+    ["sign"],
   );
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(message),
+  );
   return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-// El payload cambia cada día → la sesión caduca sola a las 24h
-function getPayload(fecha: Date): string {
-  return fecha.toISOString().slice(0, 10); // "2026-11-17"
+// Payload legible pero firmado: "estudioId|fecha"
+function encodePayload(estudioId: string, fecha: Date): string {
+  const raw = `${estudioId}|${fecha.toISOString().slice(0, 10)}`;
+  return btoa(raw); // ascii seguro (uuid + fecha)
 }
 
-export async function generarToken(): Promise<string> {
+function decodePayload(
+  payload: string,
+): { estudioId: string; fecha: string } | null {
+  try {
+    const raw = atob(payload);
+    const [estudioId, fecha] = raw.split("|");
+    if (!estudioId || !fecha) return null;
+    return { estudioId, fecha };
+  } catch {
+    return null;
+  }
+}
+
+export async function generarToken(estudioId: string): Promise<string> {
   const secret = process.env.ADMIN_SECRET;
-  if (!secret) throw new Error('ADMIN_SECRET no definido');
-  return hmacHex(getPayload(new Date()), secret);
+  if (!secret) throw new Error("ADMIN_SECRET no definido");
+  const payload = encodePayload(estudioId, new Date());
+  const firma = await hmacHex(payload, secret);
+  return `${payload}.${firma}`;
 }
 
-export async function verificarToken(token: string | undefined): Promise<boolean> {
-  if (!token || !process.env.ADMIN_SECRET) return false;
-  const hoy = new Date();
-  const ayer = new Date();
-  ayer.setDate(ayer.getDate() - 1); // tolera el cambio de medianoche
-  const [tHoy, tAyer] = [
-    await hmacHex(getPayload(hoy), process.env.ADMIN_SECRET),
-    await hmacHex(getPayload(ayer), process.env.ADMIN_SECRET),
-  ];
-  return token === tHoy || token === tAyer;
+export type SesionAdmin = { estudioId: string };
+
+export async function verificarToken(
+  token: string | undefined,
+): Promise<SesionAdmin | null> {
+  if (!token || !process.env.ADMIN_SECRET) return null;
+
+  const [payload, firma] = token.split(".");
+  if (!payload || !firma) return null;
+
+  const datos = decodePayload(payload);
+  if (!datos) return null;
+
+  // La fecha del payload debe ser hoy o ayer (tolerancia de medianoche)
+  const hoy = new Date().toISOString().slice(0, 10);
+  const ayer = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  if (datos.fecha !== hoy && datos.fecha !== ayer) return null;
+
+  // La firma debe coincidir con el payload recibido
+  const firmaEsperada = await hmacHex(payload, process.env.ADMIN_SECRET);
+  if (firma !== firmaEsperada) return null;
+
+  return { estudioId: datos.estudioId };
 }

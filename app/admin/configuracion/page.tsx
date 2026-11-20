@@ -21,8 +21,6 @@ type Configuracion = {
   facebook?: string;
 };
 
-const ESTUDIO_ID = "2441c401-ae11-4037-ab80-4725c0304840";
-
 export default function AdminConfiguracionPage() {
   const tema = useTema();
   const { toast, mostrar, cerrar } = useToast();
@@ -38,9 +36,8 @@ export default function AdminConfiguracionPage() {
 
     const cargar = async () => {
       try {
-        const res = await fetch(
-          `/api/admin/configuracion?estudioId=${ESTUDIO_ID}`,
-        );
+        // ✅ Sin estudioId: el servidor lo deriva de la sesión
+        const res = await fetch(`/api/admin/configuracion`);
         const data = await res.json();
         if (data.ok && isMounted) {
           setConfig(data.data);
@@ -77,7 +74,7 @@ export default function AdminConfiguracionPage() {
     setGuardando(true);
 
     const formData = new FormData();
-    formData.append("estudioId", ESTUDIO_ID);
+    // ✅ Sin append("estudioId", ...): el servidor lo saca de la sesión
     formData.append("nombre", config.nombre || "");
     formData.append("slogan", config.slogan || "");
     formData.append("colorPrimario", config.color_primario);
@@ -99,10 +96,7 @@ export default function AdminConfiguracionPage() {
       if (data.ok) {
         mostrar({ tipo: "ok", texto: "Configuración guardada" });
         setLogoFile(null);
-        // Recargar datos del servidor
-        const resFresh = await fetch(
-          `/api/admin/configuracion?estudioId=${ESTUDIO_ID}`,
-        );
+        const resFresh = await fetch(`/api/admin/configuracion`);
         const dataFresh = await resFresh.json();
         if (dataFresh.ok) {
           setConfig(dataFresh.data);
@@ -140,7 +134,6 @@ export default function AdminConfiguracionPage() {
     );
   }
 
-  // Helper para inputs de esta página
   const inputCls = `h-10 w-full rounded-lg border px-3 text-sm outline-none transition focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 ${tema.input}`;
   const labelCls = `block text-xs font-medium uppercase tracking-wide ${tema.texto2} mb-1.5`;
 
@@ -260,7 +253,7 @@ export default function AdminConfiguracionPage() {
             </div>
           </section>
 
-          {/* Identidad: nombre + slogan */}
+          {/* Identidad */}
           <section
             className={`${tema.tarjeta} rounded-2xl border ${tema.borde} p-5 shadow-sm`}
           >
@@ -269,7 +262,6 @@ export default function AdminConfiguracionPage() {
             >
               ✍️ Identidad
             </h2>
-
             <div className="grid gap-4">
               <div>
                 <label className={labelCls}>Nombre de la estética</label>
@@ -287,7 +279,6 @@ export default function AdminConfiguracionPage() {
                   {config.nombre?.length || 0}/50
                 </p>
               </div>
-
               <div>
                 <label className={labelCls}>Slogan</label>
                 <input
@@ -316,7 +307,6 @@ export default function AdminConfiguracionPage() {
             >
               🎨 Paleta de colores
             </h2>
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {(
                 [
@@ -362,7 +352,6 @@ export default function AdminConfiguracionPage() {
               ))}
             </div>
 
-            {/* Preview */}
             <div
               className="mt-5 rounded-xl border p-4"
               style={{
@@ -399,7 +388,6 @@ export default function AdminConfiguracionPage() {
             >
               📞 Contacto y redes
             </h2>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>WhatsApp (solo números)</label>
@@ -453,7 +441,6 @@ export default function AdminConfiguracionPage() {
             </div>
           </section>
 
-          {/* Guardar */}
           <div className="sticky bottom-4 z-10">
             <button
               type="submit"
