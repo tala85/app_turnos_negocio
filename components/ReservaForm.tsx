@@ -166,17 +166,16 @@ export default function ReservaForm({
     setHorarioSeleccionado(horario);
 
   const formatearHora = (iso: string) => {
-    try {
-      const fechaObj = new Date(iso);
-      if (isNaN(fechaObj.getTime())) return "Hora no disponible";
-      return fechaObj.toLocaleTimeString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "America/Argentina/Buenos_Aires",
-      });
-    } catch {
-      return "Hora no disponible";
-    }
+    // iso viene como "2026-11-24T09:30:00.000Z" en naive-UTC
+    // (la hora LOCAL del estudio guardada como si fuera UTC).
+    // La mostramos tal cual, SIN convertir a timezone.
+    const match = iso.match(/T(\d{2}):(\d{2})/);
+    if (!match) return "Hora no disponible";
+    const h = parseInt(match[1], 10);
+    const m = match[2];
+    const ampm = h >= 12 ? "p. m." : "a. m.";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${m} ${ampm}`;
   };
 
   const confirmarReserva = async () => {

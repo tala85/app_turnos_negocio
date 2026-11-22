@@ -75,12 +75,15 @@ const formatearFecha = (iso: string) =>
     timeZone: "America/Argentina/Buenos_Aires",
   });
 
-const formatearHora = (iso: string) =>
-  new Date(iso).toLocaleTimeString("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Argentina/Buenos_Aires",
-  });
+const formatearHora = (iso: string) => {
+  const match = iso.match(/T(\d{2}):(\d{2})/);
+  if (!match) return "Hora no disponible";
+  const h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = h >= 12 ? "p. m." : "a. m.";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${ampm}`;
+};
 
 // --- COMPONENTE REUTILIZABLE (ahora usa el Tema real) ---
 type SeccionReservasProps = {

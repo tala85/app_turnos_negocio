@@ -68,7 +68,6 @@ export async function POST(req: Request) {
         failure: `${appUrl}/pago/fallo?reservaId=${reservaId}`,
         pending: `${appUrl}/pago/pendiente?reservaId=${reservaId}`,
       },
-      auto_return: "approved",
       notification_url: `${appUrl}/api/pago/webhook`,
     };
 
