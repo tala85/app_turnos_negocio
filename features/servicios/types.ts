@@ -25,7 +25,6 @@ export type FormDatos = {
 export type Filtro = "todos" | "activos" | "inactivos";
 export type Orden = "nombre" | "precio-asc" | "precio-desc" | "duracion";
 
-export const ESTUDIO_ID = "2441c401-ae11-4037-ab80-4725c0304840";
 export const DURACIONES = [15, 20, 30, 45, 60, 90, 120];
 
 export const FORM_VACIO: FormDatos = {

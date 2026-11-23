@@ -6,7 +6,7 @@ import { obtenerEstudioPorSlug } from "@/lib/estudios";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { password } = body;
+    const { password, slug } = body; // ← Ahora esperamos que el frontend mande el slug
 
     const passwordCorrecta = process.env.ADMIN_PASSWORD || "admin123";
     if (password !== passwordCorrecta) {
@@ -16,11 +16,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Puente temporal: el login viejo emite token del estudio default
-    const estudio = await obtenerEstudioPorSlug("belleza-posadas");
-    const token = await generarToken(
-      estudio?.id ?? "2441c401-ae11-4037-ab80-4725c0304840",
-    );
+    // Buscamos el estudio por el slug que viene del frontend
+    const estudio = await obtenerEstudioPorSlug(slug);
+    if (!estudio) {
+      return NextResponse.json(
+        { ok: false, mensaje: "Estudio no encontrado" },
+        { status: 404 },
+      );
+    }
+
+    const token = await generarToken(estudio.id); // ← ID real, sin fallback hardcodeado
 
     const cookieStore = await cookies();
     cookieStore.set("admin_auth", token, {
