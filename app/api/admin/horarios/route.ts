@@ -53,11 +53,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ✅ NUEVO: Soporte para carga masiva (con tipo explícito, sin 'any')
+    if (tipo === "horarios_masivo" && Array.isArray(datos)) {
+      type HorarioMasivoInput = {
+        dia_semana: number;
+        hora_inicio: string;
+        hora_fin: string;
+      };
+
+      const { data, error } = await adminDb
+        .from("horarios_trabajo")
+        .insert(
+          (datos as HorarioMasivoInput[]).map((d) => ({
+            estudio_id: estudioId,
+            dia_semana: d.dia_semana,
+            hora_inicio: d.hora_inicio,
+            hora_fin: d.hora_fin,
+            activo: true,
+          })),
+        )
+        .select();
+
+      if (error) throw error;
+      return NextResponse.json({ ok: true, data });
+    }
+
+    // Lógica original para 1 solo horario
     if (tipo === "horario") {
       const { data, error } = await adminDb
         .from("horarios_trabajo")
         .insert({
-          estudio_id: estudioId, // ← de la sesión, NUNCA del body
+          estudio_id: estudioId,
           dia_semana: datos.dia_semana,
           hora_inicio: datos.hora_inicio,
           hora_fin: datos.hora_fin,
@@ -68,11 +94,14 @@ export async function POST(req: NextRequest) {
 
       if (error) throw error;
       return NextResponse.json({ ok: true, data });
-    } else if (tipo === "excepcion") {
+    }
+
+    // Lógica original para excepciones
+    if (tipo === "excepcion") {
       const { data, error } = await adminDb
         .from("horarios_excepciones")
         .insert({
-          estudio_id: estudioId, // ← de la sesión
+          estudio_id: estudioId,
           fecha: datos.fecha,
           hora_inicio: datos.hora_inicio,
           hora_fin: datos.hora_fin,

@@ -10,31 +10,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "SoRo Estética | Turnos online en Posadas",
-    template: "%s | SoRo Estética",
+    default: "TurnosPro | Turnos online para estudios de belleza",
+    template: "%s | TurnosPro",
   },
   description:
-    "Reservá tu turno de manicura, pedicura, faciales y más en SoRo Estética, Posadas. Turnos online, seña con MercadoPago y confirmación por WhatsApp.",
-  keywords: [
-    "turnos online",
-    "estética Posadas",
-    "manicura",
-    "pedicura",
-    "SoRo",
-  ],
+    "Reservá tu turno de belleza online. Seña con MercadoPago, recordatorios automáticos y panel de gestión para estudios.",
   openGraph: {
-    title: "SoRo Estética | Turnos online en Posadas",
-    description:
-      "Reservá tu turno de belleza online. Rápido, fácil y con confirmación por WhatsApp.",
+    title: "TurnosPro",
+    description: "Turnos online para estudios de belleza",
     type: "website",
     locale: "es_AR",
-    url: "https://tu-dominio.vercel.app",
-    siteName: "SoRo Estética",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "SoRo Estética",
-    description: "Turnos online de belleza en Posadas",
+    siteName: "TurnosPro",
   },
   robots: "index, follow",
 };
