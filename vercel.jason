@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/extender-agenda",
-      "schedule": "0 6 * * *"
-    }
-  ]
-}
