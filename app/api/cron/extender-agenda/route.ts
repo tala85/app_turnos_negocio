@@ -175,14 +175,23 @@ export async function GET(req: NextRequest) {
       }
 
       if (nuevos.length > 0) {
-        const { error: errInsert } = await adminDb
+        const { data, error: errInsert } = await adminDb
           .from("turnos")
-          .insert(nuevos);
+          .upsert(nuevos, {
+            onConflict: "estudio_id,inicio",
+            ignoreDuplicates: true,
+          })
+          .select("id");
+
         if (errInsert) throw errInsert;
-        totalInsertados += nuevos.length;
-        detalle.push(
-          `estudio ${estudio.id.slice(0, 8)}: +${nuevos.length} turnos`,
-        );
+
+        const realmenteInsertados = (data || []).length;
+        if (realmenteInsertados > 0) {
+          totalInsertados += realmenteInsertados;
+          detalle.push(
+            `estudio ${estudio.id.slice(0, 8)}: +${realmenteInsertados} turnos (${nuevos.length - realmenteInsertados} ya existían)`,
+          );
+        }
       }
     }
 
