@@ -420,7 +420,7 @@ export default function ReservaForm({
       </div>
 
       <div className="md:col-span-1">
-        <div className="md:sticky md:top-6">
+        <div className="md:sticky md:top-24">
           <ResumenReserva
             items={items}
             total={total}

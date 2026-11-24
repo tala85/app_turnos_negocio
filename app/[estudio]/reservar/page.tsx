@@ -55,45 +55,63 @@ export default async function ReservarPage({
 
   return (
     <main
-      className="min-h-screen p-4 md:p-8"
+      className="min-h-screen"
       style={{ backgroundColor: estudio.color_fondo }}
     >
-      <div className="max-w-6xl mx-auto">
-        {/* Header con botón volver */}
-        <div className="flex justify-between items-center mb-6">
-          <Link
-            href={`/${slug}`}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <span className="text-xl">←</span>
-            <span className="font-medium">Volver al inicio</span>
-          </Link>
+      {/* ✅ Navbar superior: blanca, fija al scrollear, con botón y logo protagonistas */}
+      <header className="sticky top-0 z-40 border-b border-black/5 bg-white/85 shadow-sm backdrop-blur-md">
+        <div className="mx-auto grid max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3">
+          <div className="justify-self-start">
+            {/* Izquierda: volver */}
+            <Link
+              href={`/${slug}`}
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:-translate-x-0.5 hover:border-gray-300 hover:shadow-md"
+            >
+              <span aria-hidden>←</span>
+              <span className="hidden sm:inline">Volver al inicio</span>
+              <span className="sm:hidden">Inicio</span>
+            </Link>
+          </div>
 
-          {estudio.logo_url && (
-            <Image
-              src={estudio.logo_url}
-              alt="Logo"
-              width={150}
-              height={50}
-              className="h-12 w-auto object-contain"
-              unoptimized
-            />
-          )}
+          {/* ✅ Nombre GRANDE + slogan CHICO, en la misma línea */}
+          <div className="flex min-w-0 items-baseline justify-center gap-3">
+            <h1
+              className="truncate text-2xl font-extrabold tracking-tight md:text-5xl"
+              style={{ color: estudio.color_primario }}
+            >
+              {estudio.nombre}
+            </h1>
+            {estudio.slogan && (
+              <p className="hidden truncate text-sm text-gray-500 sm:block md:text-base">
+                {estudio.slogan}
+              </p>
+            )}
+          </div>
+
+          {/* Derecha: logo */}
+          <div className="justify-self-end">
+            {estudio.logo_url ? (
+              <Image
+                src={estudio.logo_url}
+                alt={`Logo de ${estudio.nombre}`}
+                width={160}
+                height={56}
+                className="h-11 w-auto object-contain md:h-14"
+                unoptimized
+              />
+            ) : (
+              <span
+                className="text-lg font-extrabold"
+                style={{ color: estudio.color_primario }}
+              >
+                💅
+              </span>
+            )}
+          </div>
         </div>
+      </header>
 
-        {/* Título */}
-        <div className="mb-8">
-          <h1
-            className="text-3xl md:text-4xl font-bold"
-            style={{ color: estudio.color_primario }}
-          >
-            {estudio.nombre}
-          </h1>
-          {estudio.slogan && (
-            <p className="text-gray-600 mt-2">{estudio.slogan}</p>
-          )}
-        </div>
-
+      <div className="mx-auto max-w-6xl px-4 pb-10 pt-6 md:pt-8">
         {/* Formulario de reserva */}
         <ReservaForm
           estudioId={estudio.id}

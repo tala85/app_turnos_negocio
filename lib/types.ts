@@ -57,6 +57,7 @@ export type Servicio = {
   duracion_min: number;
   activo: boolean;
   orden: number;
+  imagen_url: string | null;
 };
 
 export type Combo = {
@@ -68,3 +69,4 @@ export type Combo = {
   activo: boolean;
   combo_servicios?: Array<{ servicio_id: string }>;
 };
+

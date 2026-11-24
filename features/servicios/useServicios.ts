@@ -98,6 +98,7 @@ export function useServicios() {
       descripcion: s.descripcion ?? "",
       precio: String(s.precio),
       duracion_min: String(s.duracion_min),
+      imagen_url: s.imagen_url || "", // ← AGREGAR
     });
     irAlFormulario();
   };
@@ -134,6 +135,7 @@ export function useServicios() {
       descripcion: formDatos.descripcion.trim(),
       precio: precioNum,
       duracion_min: duracionNum,
+      imagen_url: formDatos.imagen_url || null, // ← AGREGAR (null si está vacío)
     };
     const eraEdicion = Boolean(editando);
 
@@ -190,6 +192,7 @@ export function useServicios() {
           descripcion: s.descripcion ?? "",
           precio: s.precio,
           duracion_min: s.duracion_min,
+          imagen_url: s.imagen_url || null, // ← AGREGAR
         },
         s.activo,
       );

@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
   if (!estudioId) return noAutorizado();
 
   const body = await req.json();
-  const { nombre, descripcion, precio, duracion_min, activo } = body;
+  const { nombre, descripcion, precio, duracion_min, activo, imagen_url } =
+    body;
 
   const { data, error } = await adminDb
     .from("servicios")
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
       precio,
       duracion_min,
       activo: activo ?? true,
+      imagen_url: imagen_url || null,
     })
     .select()
     .single();

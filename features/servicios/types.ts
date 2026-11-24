@@ -6,6 +6,7 @@ export type Servicio = {
   precio: number;
   duracion_min: number;
   activo: boolean;
+  imagen_url: string | null;
 };
 
 export type ServicioPayload = {
@@ -13,6 +14,7 @@ export type ServicioPayload = {
   descripcion: string;
   precio: number;
   duracion_min: number;
+  imagen_url: string | null;
 };
 
 export type FormDatos = {
@@ -20,6 +22,7 @@ export type FormDatos = {
   descripcion: string;
   precio: string;
   duracion_min: string;
+  imagen_url: string | null;
 };
 
 export type Filtro = "todos" | "activos" | "inactivos";
@@ -32,4 +35,5 @@ export const FORM_VACIO: FormDatos = {
   descripcion: "",
   precio: "",
   duracion_min: "30",
+  imagen_url: "",
 };
