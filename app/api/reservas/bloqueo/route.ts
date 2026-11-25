@@ -1,72 +1,88 @@
-import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/supabase/admin';
+import { NextResponse } from "next/server";
+import { adminDb } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const {
-      estudioId,
-      turnoIds,
-      servicioIds,
-      comboIds,
-      cliente,
-    } = body;
+    const { estudioId, turnoIds, servicioIds, comboIds, cliente } = body;
 
-    console.log('[reservas/bloqueo] Body recibido:', body);
-
-    // Validaciones
     if (!estudioId || !turnoIds || !servicioIds || !cliente) {
       return NextResponse.json(
-        { ok: false, mensaje: 'Faltan datos' },
-        { status: 400 }
+        { ok: false, mensaje: "Faltan datos" },
+        { status: 400 },
       );
     }
 
-    // Obtener servicios y combos para calcular el total
-    const [{ data: servicios }, { data: combos }] = await Promise.all([
+    // 🔒 BLINDAJE 1: Verificar que los turnos existen y PERTENECEN a este estudio
+    const { data: turnosDB, error: errorTurnos } = await adminDb
+      .from("turnos")
+      .select("id, estado")
+      .in("id", turnoIds)
+      .eq("estudio_id", estudioId);
+
+    if (errorTurnos || !turnosDB || turnosDB.length !== turnoIds.length) {
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje:
+            "Uno o más turnos son inválidos o no pertenecen a este estudio",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verificar que no estén ya ocupados/bloqueados
+    const turnosOcupados = turnosDB.filter((t) => t.estado !== "libre");
+    if (turnosOcupados.length > 0) {
+      return NextResponse.json(
+        { ok: false, mensaje: "Uno o más turnos ya no están disponibles" },
+        { status: 409 },
+      );
+    }
+
+    // 🔒 BLINDAJE 2: Obtener SOLO los servicios/combos que pertenecen a este estudio
+    // (Ignoramos cualquier ID inyectado por el frontend que no sea de este estudio)
+    const [{ data: serviciosDB }, { data: combosDB }] = await Promise.all([
       adminDb
-        .from('servicios')
-        .select('*')
-        .in('id', servicioIds),
+        .from("servicios")
+        .select("id, precio, duracion_min")
+        .in("id", servicioIds)
+        .eq("estudio_id", estudioId),
       comboIds && comboIds.length > 0
         ? adminDb
-            .from('combos')
-            .select('*')
-            .in('id', comboIds)
+            .from("combos")
+            .select("id, precio_oferta")
+            .in("id", comboIds)
+            .eq("estudio_id", estudioId)
         : Promise.resolve({ data: [] }),
     ]);
 
-    // Calcular total
+    // 🔒 BLINDAJE 3: Calcular el total basándonos ÚNICAMENTE en lo que devolvió la BD
     let total = 0;
-    servicios?.forEach((s) => (total += s.precio));
-    combos?.forEach((c) => (total += c.precio_oferta));
+    serviciosDB?.forEach((s) => (total += Number(s.precio)));
+    combosDB?.forEach((c) => (total += Number(c.precio_oferta)));
 
     const sena = Math.round((total * 30) / 100);
     const requiereSena = total > 0;
 
-    console.log('[reservas/bloqueo] Total:', total, 'Seña:', sena);
-
-    // Bloquear los turnos
+    // 🔒 BLINDAJE 4: Bloquear SOLO los turnos que ya validamos que son de este estudio
     const { error: errorBloqueo } = await adminDb
-      .from('turnos')
-      .update({ estado: 'bloqueado' })
-      .in('id', turnoIds);
+      .from("turnos")
+      .update({ estado: "bloqueado" })
+      .in("id", turnoIds); // (Sabemos que son seguros por el Blindaje 1)
 
-    if (errorBloqueo) {
-      console.error('[reservas/bloqueo] Error bloqueando turnos:', errorBloqueo);
-      throw errorBloqueo;
-    }
+    if (errorBloqueo) throw errorBloqueo;
 
     // Crear la reserva
     const { data: reserva, error: errorReserva } = await adminDb
-      .from('reservas')
+      .from("reservas")
       .insert({
         estudio_id: estudioId,
         cliente_nombre: cliente.nombre,
         cliente_apellido: cliente.apellido,
         cliente_dni: cliente.dni,
         cliente_telefono: cliente.telefono,
-        estado: 'bloqueada',
+        estado: "bloqueada",
         total,
         sena,
         servicio_ids: servicioIds,
@@ -76,12 +92,7 @@ export async function POST(req: Request) {
       .select()
       .single();
 
-    if (errorReserva) {
-      console.error('[reservas/bloqueo] Error creando reserva:', errorReserva);
-      throw errorReserva;
-    }
-
-    console.log('[reservas/bloqueo] Reserva creada:', reserva.id);
+    if (errorReserva) throw errorReserva;
 
     return NextResponse.json({
       ok: true,
@@ -91,11 +102,8 @@ export async function POST(req: Request) {
       requiereSena,
     });
   } catch (e: unknown) {
-    const mensaje = e instanceof Error ? e.message : 'Error al reservar';
-    console.error('[reservas/bloqueo] Error:', e);
-    return NextResponse.json(
-      { ok: false, mensaje },
-      { status: 500 }
-    );
+    const mensaje = e instanceof Error ? e.message : "Error al reservar";
+    console.error("[reservas/bloqueo] Error:", e);
+    return NextResponse.json({ ok: false, mensaje }, { status: 500 });
   }
 }
