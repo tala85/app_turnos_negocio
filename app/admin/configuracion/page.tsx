@@ -10,6 +10,7 @@ type Configuracion = {
   id: string;
   nombre: string;
   slug: string;
+  email: string | null;
   logo_url: string | null;
   slogan: string | null;
   color_primario: string;
@@ -84,6 +85,7 @@ export default function AdminConfiguracionPage() {
     formData.append("direccion", config.direccion || "");
     formData.append("instagram", config.instagram || "");
     formData.append("facebook", config.facebook || "");
+    formData.append("email", config.email || "");
     if (logoFile) formData.append("logo", logoFile);
 
     try {
@@ -92,7 +94,7 @@ export default function AdminConfiguracionPage() {
         body: formData,
       });
       const data = await res.json();
-
+      
       if (data.ok) {
         mostrar({ tipo: "ok", texto: "Configuración guardada" });
         setLogoFile(null);
@@ -293,6 +295,22 @@ export default function AdminConfiguracionPage() {
                 />
                 <p className={`text-xs ${tema.texto2} mt-1 text-right`}>
                   {config.slogan?.length || 0}/100
+                </p>
+              </div>
+              <div>
+                <label className={labelCls}>Email de acceso al panel</label>
+                <input
+                  type="email"
+                  value={config.email || ""}
+                  onChange={(e) =>
+                    setConfig({ ...config, email: e.target.value })
+                  }
+                  placeholder="tu-estudio@email.com"
+                  className={inputCls}
+                />
+                <p className={`text-xs ${tema.texto2} mt-1`}>
+                  🔑 A este email le llega el enlace para recuperar el acceso.
+                  Es obligatorio para el Magic Link.
                 </p>
               </div>
             </div>

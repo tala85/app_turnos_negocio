@@ -4,7 +4,7 @@ import AccionesEstudio from "./AccionesEstudio";
 export default async function SuperAdminEstudiosPage() {
   const { data: estudios, error } = await adminDb
     .from("estudios")
-    .select("id, nombre, slug, created_at")
+    .select("id, nombre, slug, email, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -30,6 +30,7 @@ export default async function SuperAdminEstudiosPage() {
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-800 bg-slate-900/50">
               <th className="px-6 py-4 font-medium">Nombre</th>
+              <th className="px-6 py-4 font-medium">Email</th>
               <th className="px-6 py-4 font-medium">Slug</th>
               <th className="px-6 py-4 font-medium">Registrado</th>
               <th className="px-6 py-4 font-medium text-right">Acciones</th>
@@ -45,6 +46,7 @@ export default async function SuperAdminEstudiosPage() {
                   <td className="px-6 py-4 font-medium text-white">
                     {e.nombre}
                   </td>
+                  <td className="px-6 py-4 text-slate-400 text-xs"></td>
                   <td className="px-6 py-4">
                     <code className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300">
                       /{e.slug}
@@ -61,7 +63,7 @@ export default async function SuperAdminEstudiosPage() {
             ) : (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-6 py-8 text-center text-slate-400"
                 >
                   Aún no hay estudios registrados.

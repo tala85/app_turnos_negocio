@@ -7,7 +7,7 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ Solo las rutas DENTRO de (protected) exigen sesión
+  // ✅ Solo las rutas DENTRO de (protected) exigen sesión de Super Admin
   const autenticado = await verificarSuperAdmin();
   if (!autenticado) redirect('/super-admin/login');
 

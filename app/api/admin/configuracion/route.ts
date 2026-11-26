@@ -39,6 +39,7 @@ export async function PUT(req: Request) {
     const colorSecundario = formData.get("colorSecundario") as string;
     const colorFondo = formData.get("colorFondo") as string;
     const logo = formData.get("logo") as File | null;
+    const email = formData.get("email") as string; 
 
     let logoUrl: string | undefined;
 
@@ -65,6 +66,7 @@ export async function PUT(req: Request) {
     // Preparar datos a actualizar
     const datosActualizados: Record<string, string> = {
       nombre: nombre || "Belleza Posadas",
+      email: email || "",
       slogan: slogan || "",
       color_primario: colorPrimario,
       color_secundario: colorSecundario,

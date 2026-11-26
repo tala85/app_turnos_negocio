@@ -71,3 +71,48 @@ export async function verificarToken(
 
   return { estudioId: datos.estudioId };
 }
+
+// ── Magic Link: token de corta duración (15 min) ──────────────
+// Payload: "estudioId|expiracionISO"  (expiración = ahora + 15 min)
+
+export async function generarMagicToken(
+  estudioId: string,
+  minutosVida = 15,
+): Promise<string> {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) throw new Error("ADMIN_SECRET no definido");
+
+  const expira = new Date(Date.now() + minutosVida * 60 * 1000);
+  const raw = `${estudioId}|${expira.toISOString()}`;
+  const payload = btoa(raw);
+  const firma = await hmacHex(payload, secret);
+  return `${payload}.${firma}`;
+}
+
+export async function verificarMagicToken(
+  token: string | undefined,
+): Promise<SesionAdmin | null> {
+  if (!token || !process.env.ADMIN_SECRET) return null;
+
+  const [payload, firma] = token.split(".");
+  if (!payload || !firma) return null;
+
+  // La firma debe coincidir (si adulteraron el estudioId o la expiración, falla)
+  const firmaEsperada = await hmacHex(payload, process.env.ADMIN_SECRET);
+  if (firma !== firmaEsperada) return null;
+
+  // Decodificamos y chequeamos que NO haya expirado
+  try {
+    const raw = atob(payload);
+    const [estudioId, expiraISO] = raw.split("|");
+    if (!estudioId || !expiraISO) return null;
+
+    if (Date.now() > new Date(expiraISO).getTime()) {
+      return null; // el link ya murió (pasaron los 15 min)
+    }
+
+    return { estudioId };
+  } catch {
+    return null;
+  }
+}
